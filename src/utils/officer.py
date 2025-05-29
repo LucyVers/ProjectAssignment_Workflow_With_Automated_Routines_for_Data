@@ -71,5 +71,5 @@ class Officer:
             bool: True if verified, False if issues found
         """
         # TODO: Implement customer verification logic
-        pass
+    pass
 

@@ -40,4 +40,4 @@ class Interest:
             float: Calculated interest amount
         """
         # TODO: Implement actual calculation
-        pass
+    pass

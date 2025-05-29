@@ -57,4 +57,4 @@ class Manager:
             Optional[float]: New credit limit if approved, None if rejected
         """
         # TODO: Implement credit limit adjustment logic
-        pass
+    pass
