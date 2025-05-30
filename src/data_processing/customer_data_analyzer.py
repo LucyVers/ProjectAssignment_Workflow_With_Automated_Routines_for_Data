@@ -90,7 +90,7 @@ class CustomerDataAnalyzer:
         
         # Count accounts per customer
         account_counts = self.df.groupby('Personnummer')['BankAccount'].count()
-        relationships['accounts_per_customer'] = account_counts.value_counts().to_dict()
+        relationships['accounts_per_customer'] = account_counts.to_dict()
         
         # Check for duplicate accounts
         account_customers = self.df.groupby('BankAccount')['Personnummer'].apply(list)
@@ -184,10 +184,10 @@ def main():
     
     print("\nRelationship Analysis:")
     print("--------------------")
-    print("\nAccounts per customer distribution:")
-    for count, frequency in results['relationships']['accounts_per_customer'].items():
-        print(f"  {count} accounts: {frequency} customers")
-    print(f"\nShared accounts: {len(results['relationships']['shared_accounts'])}")
+    print("\nAccounts per customer:")
+    for personnummer, count in results['relationship_analysis']['accounts_per_customer'].items():
+        print(f"  Customer {personnummer}: {count} accounts")
+    print(f"\nShared accounts: {len(results['relationship_analysis']['shared_accounts'])}")
     
     print("\nData Quality Check:")
     print("-----------------")

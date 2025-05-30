@@ -3,6 +3,14 @@
 ## Overview
 This document analyzes the relationships between customer data (`sebank_customers_with_accounts.csv`) and transaction data (`transactions.csv`).
 
+## Recent Updates
+**Important**: Validation results from May 31, 2025 have identified significant relationship issues. See [Customer Data Analysis](customer_data_analysis.md) for full details.
+
+Key relationship findings:
+- Multiple accounts sharing same personnummer (419 cases)
+- Potential identity verification issues (55 underage cases)
+- Address relationship inconsistencies (postal code/city mismatches)
+
 ## Data Structure Analysis
 
 ### Customer Data Structure
@@ -89,19 +97,33 @@ This document analyzes the relationships between customer data (`sebank_customer
    - Account number formats match
    - Geographic information aligns
    - Customer details consistent
+   - **NEW**: Additional consistency checks required for:
+     - Personnummer uniqueness
+     - Address component relationships
+     - Phone number standardization
 
 ## Next Steps
 1. Implement Validation Rules
    - Create account format validators
    - Set up transaction validators
    - Establish relationship checks
+   - Create duplicate personnummer checks
+   - Set up age verification
+   - Establish address relationship validation
 
 2. Create Monitoring System
    - Track transaction patterns
    - Monitor account activity
    - Alert on anomalies
+   - Track relationship integrity
+   - Monitor duplicate cases
 
 3. Develop Quality Reports
    - Account activity summaries
    - Transaction pattern analysis
-   - Relationship integrity checks 
+   - Relationship integrity checks
+
+## Related Documents
+- [Customer Data Analysis](customer_data_analysis.md) - See "Validation Results (May 31, 2025)"
+- [Validation Rules](validation_rules.md)
+- [Data Quality Strategy](../../development/data_quality_strategy.md) 

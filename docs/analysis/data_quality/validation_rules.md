@@ -1,9 +1,20 @@
 # Data Quality Validation Rules
 
 ## Related Documents
+- [Customer Data Analysis](customer_data_analysis.md) - See "Validation Results (May 31, 2025)" for latest findings
 - [KYC Requirements](../../sources/regulatory_documents/kyc_requirements.md)
 - [FI Requirements](../../sources/regulatory_documents/fi_requirements.md)
 - [Swedish Transaction Patterns](../../sources/regulatory_documents/swedish_transaction_patterns.md)
+
+## Recent Validation Findings
+**Important**: Recent validation (May 31, 2025) has identified several critical issues that require immediate attention. See [Customer Data Analysis](customer_data_analysis.md) for full details.
+
+Key findings requiring rule updates:
+- 419 duplicate personnummer detected
+- 55 cases of potentially underage customers
+- 998 invalid postal codes
+- 886 invalid city names
+- 459 non-standardized phone numbers
 
 ## Overview
 This document defines the validation rules for my banking data quality system, based on the analysis of perfect quality patterns observed in 2024 data and current KYC/AML requirements. These rules will be used to validate both customer and transaction data.
@@ -18,10 +29,16 @@ This document defines the validation rules for my banking data quality system, b
 
 2. Personal Information
    - Personnummer: `YYMMDD-XXXX`
+     * **NEW**: Additional check for duplicates required
+     * **NEW**: Age verification check required (minimum age: 15)
    - Phone Numbers:
-     - Local Format: `XXX-XXX XX XX`
-     - International Format: `+46 (0)XXX XXX XX`
+     * **Preferred Formats**:
+       - International: `+46 (0)XXX XXX XX`
+       - Local: `XXX-XXX XX XX`
+     * **NEW**: Standardization required for non-compliant formats
    - Address Format:
+     * **NEW**: Enhanced validation against current postal codes
+     * **NEW**: City name verification against municipality list
      - Street: `[Street Name] [Number]`
      - Postal Code: `[5 digits]`
      - City: Valid Swedish municipality name

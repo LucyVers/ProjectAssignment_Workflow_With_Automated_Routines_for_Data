@@ -1,7 +1,28 @@
 # Data Quality Strategy
 
+## Recent Updates
+**Important**: Recent validation results (May 31, 2025) have identified several critical data quality issues. See [Customer Data Analysis](../analysis/data_quality/customer_data_analysis.md) for full details.
+
 ## Overview
 This document outlines my strategy for ensuring data quality in the banking system. It is closely related to my [database architecture](database_architecture.md) and overall [project analysis](project_analysis.md).
+
+## Current Priority Issues
+Based on recent validation findings:
+
+1. **Identity Data Quality**
+   - 419 duplicate personnummer cases identified
+   - 55 potential underage customer accounts
+   - Implementation of enhanced verification needed
+
+2. **Address Data Quality**
+   - 998 invalid postal codes detected
+   - 886 invalid city names found
+   - Reference data updates required
+
+3. **Contact Information Quality**
+   - 459 non-standardized phone numbers
+   - Format standardization needed
+   - Automated conversion tools required
 
 ## Data Quality Dimensions
 
@@ -13,6 +34,10 @@ Ensuring data is correct and reliable.
 - Range checks for numerical values
 - Format validation for standardized fields
 - Cross-reference verification where applicable
+**NEW**: Enhanced validation for:
+- Personnummer uniqueness
+- Age verification
+- Address components
 
 ### 2. Completeness
 Ensuring all required data is present.
@@ -31,6 +56,10 @@ Ensuring data is consistent across the system.
 - Transaction integrity checks
 - Cross-table validation rules
 - Business rule enforcement
+**NEW**: Additional checks for:
+- Duplicate personnummer detection
+- Address component relationships
+- Phone number standardization
 
 ### 4. Validity
 Ensuring data conforms to defined formats and rules.
@@ -84,6 +113,10 @@ Ensuring data is current and processed in time.
    - Error logging
    - Notification system
    - Recovery procedures
+   **NEW**: Priority handling for:
+   - Duplicate personnummer cases
+   - Age verification failures
+   - Address validation issues
 
 2. **Transaction Rollback**
    - Automatic rollback triggers
@@ -93,15 +126,21 @@ Ensuring data is current and processed in time.
 
 ## Implementation Details
 
-### Phase 1: Basic Validation
-- SQLAlchemy model constraints
-- Database-level constraints
-- Basic business rules
+### Phase 1: Critical Issues Resolution
+**NEW**: Address immediate validation findings:
+- Resolve duplicate personnummer cases
+- Verify underage customer accounts
+- Update address validation system
+- Implement phone number standardization
 
-### Phase 2: Advanced Validation
+### Phase 2: Enhanced Validation
 - Complex business rules
 - Fraud detection patterns
 - Cross-transaction validation
+**NEW**: Additional validation for:
+- Real-time duplicate detection
+- Age verification at entry
+- Address component verification
 
 ### Phase 3: Monitoring and Reporting
 - Validation statistics
@@ -110,8 +149,9 @@ Ensuring data is current and processed in time.
 - Quality metrics
 
 ## Related Documentation
-- [Database Architecture](database_architecture.md)
-- [Project Analysis](project_analysis.md)
+- [Customer Data Analysis](../analysis/data_quality/customer_data_analysis.md)
+- [Validation Rules](../analysis/data_quality/validation_rules.md)
+- [Data Relationships](../analysis/data_quality/data_relationships.md)
 - [Integration Checklist](integration_checklist.md)
 
 ## Next Steps

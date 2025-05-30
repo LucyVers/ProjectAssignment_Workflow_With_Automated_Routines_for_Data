@@ -43,6 +43,39 @@
     - [ ] Design schema based on analysis
     - [ ] Create migration scripts
     - [ ] Implement validation rules
+- [ ] Customer Data Analysis (sebank_customers_with_accounts.csv)
+  - [x] Initial data analysis completed [Completed: May 31, 2025]
+  - [x] Data quality validation [Completed: May 31, 2025]
+  - [ ] Detailed Analysis of Critical Issues
+    - [ ] Duplicate Personal ID Numbers
+      - [ ] Create list of all 419 duplicate personal ID numbers
+      - [ ] Analyze duplication patterns
+      - [ ] Propose actions for each type of duplicate
+      - [ ] Document potential risks
+    
+    - [ ] Age Verification
+      - [ ] Analyze the 55 cases of potentially underage customers
+      - [ ] Categorize by age groups
+      - [ ] Evaluate regulatory risks
+      - [ ] Propose verification process
+    
+    - [ ] Address Validation
+      - [ ] Analyze the 998 invalid postal codes
+      - [ ] Investigate the 886 invalid cities
+      - [ ] Compare against official postal database
+      - [ ] Document geographic patterns
+    
+    - [ ] Phone Number Standardization
+      - [ ] Categorize the 459 non-standardized numbers
+      - [ ] Create conversion rules
+      - [ ] Test standardization process
+      - [ ] Document special cases
+
+  - [ ] Summary and Recommendations
+    - [ ] Prioritize actions based on risk
+    - [ ] Create implementation plan
+    - [ ] Estimate resource requirements
+    - [ ] Define success criteria
 
 ### Current Status Summary:
 - Completed detailed analysis of missing country problem
@@ -454,4 +487,41 @@ Se relaterade dokument:
 - [x] Data Handling
   - [x] Create data handling guidelines [Completed: May 30, 2025]
   - [x] Document backup procedures [Completed: May 30, 2025]
-  - [x] Define data processing workflows [Completed: May 30, 2025] 
+  - [x] Define data processing workflows [Completed: May 30, 2025]
+
+## Priority Tasks for Tomorrow (June 1, 2025)
+### Customer Data Analysis Deep Dive
+1. **Duplicate Personnummer Analysis** (HIGH PRIORITY)
+   - [ ] Generate complete list of 419 duplicate cases
+   - [ ] Analyze duplication patterns
+   - [ ] Develop remediation proposals
+   - [ ] Document associated risks and impacts
+
+2. **Age Verification Review** (HIGH PRIORITY)
+   - [ ] Analyze 55 cases of potentially underage customers
+   - [ ] Categorize by age groups
+   - [ ] Assess regulatory compliance risks
+   - [ ] Develop verification process proposal
+
+3. **Address Validation Analysis** (MEDIUM PRIORITY)
+   - [ ] Analyze 998 invalid postal codes
+   - [ ] Investigate 886 invalid cities
+   - [ ] Compare against official postal database
+   - [ ] Document geographic patterns
+
+4. **Phone Number Standardization** (MEDIUM PRIORITY)
+   - [ ] Categorize 459 non-standardized numbers
+   - [ ] Create standardization rules
+   - [ ] Test standardization process
+   - [ ] Document special cases
+
+5. **Final Summary and Recommendations**
+   - [ ] Prioritize actions based on risk assessment
+   - [ ] Create implementation plan
+   - [ ] Estimate resource requirements
+   - [ ] Define success criteria
+
+Expected Timeline:
+- Morning: Focus on Personnummer and Age Verification
+- Afternoon: Address and Phone Number analysis
+- End of Day: Compile findings and create recommendations 
