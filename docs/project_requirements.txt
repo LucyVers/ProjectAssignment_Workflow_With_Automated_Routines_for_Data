@@ -1,0 +1,39 @@
+Projektuppgiften - Arbetsflöde med automatiserade rutiner för datakvalitet
+
+Om uppgiften
+Ni ska i grupper träna på att hantera dataflöden via strukturerade applikationer och databaser, med testning, validering, migrationer, transaktioner med rollbacks, med workflow management.Ni har de teknologier ni lär er om under kursen, samt sådant ni lärt er tidigare, att använda.
+Ert case är en svensk bank, som hanterar ca 1 million transaktioner/dag, med ca 25 000 egna konton. Dessa transaktioner kommer utifrån i csv-format, där första raden är etiketter för data och resterande rader är transaktioner. En del transaktioner är utgående från banken, andra är inkommande. Merparten av transationerna sker inom Sverige, men många transaktioner går också utomlands. Det förekommer fel i data, och ibland redan bedrägeriförsök, eller transaktioner som kan vara kopplade till kriminell verksamhet.
+Genomförande
+Er uppgift är att tillämpa datakvalitets-strategier och verktyg för att minimera risker och fel genom identifiera och korrigera eller avvisa transaktioner.
+Som startpunkt har ni er egen upparbetade kod, och/eller kod för projektstart som finns här: https://github.com/WeeHorse/python-bank-project-start
+Data med transaktioner, konton och kunder finns i mappen /data, eller här via direktlänkar:
+https://github.com/WeeHorse/python-bank-project-start/blob/main/data/transactions.csv
+https://github.com/WeeHorse/python-bank-project-start/blob/main/data/sebank_customers_with_accounts.csv
+Arbeta enligt SCRUM. Utse en SCRUM-master. Teammedlemmar ska sköta sina plikter och SCRUM-master har utöver sina plikter som teammedlem också dessa plikter. Använd, och uppdatera löpande, visualisering av arbetet, med t ex Trello. Detta är ett ansvar för alla gruppmedlemmar.
+Förslag på arbetsgång / hållpunkter
+Undersök och kartlägg inkommande data. Ni får under utvecklingsfasen en csv-dump med 100 000 rader transaktioner att undersöka och arbeta med, och i slutet av projektet får ni köra en dump för ett helt dygn på ca 1 million rader. Detta betyder att ursprungsformatet måste behållas som indata i ert projekt.
+Se till att ni har en fungerande bankapplikation med databas och tabeller som stödjer transaktionsdatan. Se till att alla gruppmedlemmar kan köra och arbeta med projektet på sin egen dator. Använd git för att dela kod med varandra.
+Planera och sätt upp databasen som migrationer, så att ändringar i databasen kan genomföras i efterhand.
+Se till att bankapplikationen har tester, som också stödjer de uppdateringar ni gör.
+Skapa en notebook för att börja bearbeta och validera datan.
+Ni kan med fördel exportera datan från er notebook till postgres när den är klar. Tänk på att göra databasuppdateringar som transaktioner, så att ni kan göra rollbaks om t ex databasvalidering fallerar.
+Generera en rapport i er notebook, så ni får en logg när ni kan följa vad som händer.
+Planera och sätt upp ett workflow som automatserar arbetsflödet med ett workflow-verktyg, inklusive tester, validering, export och tester.
+
+Vad, hur och vad ska ni leverera?
+Källfiler, rapport och data (databas) som resultat av ovanstående arbete.
+Lämna in detta som en länk till ett uppdaterat git-repo.
+Varje gruppmedlem kan skicka med adressen till i sin inlämning.
+Skriv också ner namnen och git-namnen för alla gruppmedlemmar.
+Individuell del enligt nedan.
+Lämna in på Learnpoint senast sista söndagen i kursen.
+
+
+Individuell del
+Skriv och lämna in en egen projektberättelse, med individuell skriftlig analys av arbetet med datakvalitet, och en reflektion över samarbetet under projektet.Beskriv vad ni gjort som grupp, och vad du gjort som individ.Analysen ska beskriva kvalitetsproblem ni upptäckt, och hur ni åtgärdat dem.Reflektionen behöver ta upp hur samarbetet fungerat, och vilka metoder ni använt för att samarbeta. Vad fungerade bra? Vad kunde fungerat bättre?
+Redovisning
+Sker sista kursdagen. Ni ska demonstrera era workflows, och berätta om ert arbete i seminariegrupper, och i helklass. Genomförandet av arbetet kommer ni att bearbeta i Retrospektiv.
+Bedömning
+Bedömningen görs utifrån kursplanen.
+För ett godkänt betyg ska ovanstående moment genomföras på ett grundläggande, men heltäckande sätt (du ska vara närvarande, aktiv, delaktig och produktiv i hela arbetet). Du ska ha genomfört en individuell analys och reflektion på ett grundläggande sätt, enligt beskrivningen ovan.
+För ett väl godkänt betyg ska arbetet ske på ett fördjupat sätt, vilket kan ske genom ett tydligt kommunikativt / proaktivt / analytiskt arbetssätt i gruppmomenten, och kan ske genom tydlighet och kvalitet i genomförandet och/eller genom att ha tillämpat mer avancerade/komplexa lösningar. Du ska i din individuella del ha analyserat och reflekterat på ett fördjupat sätt om kvaliteter i genomförandet. 
