@@ -52,13 +52,19 @@ Thumbs.db
 *.postgresql
 *.mysql
 
-# Environment variables
+# Environment variables and configuration
 .env
 .env.local
 .env.*.local
 .env.development
 .env.test
 .env.production
+alembic.ini
+config.ini
+*.cfg
+database.yml
+config.yaml
+config.yml
 
 # Data files
 data/*.csv
@@ -119,4 +125,12 @@ docs/api/
 *.bak
 *.tmp
 *.temp
-*~ 
+*~
+
+# Secrets and credentials
+*_key.json
+*_secret.json
+credentials.json
+secrets.yaml
+secrets.yml
+secrets.json 
