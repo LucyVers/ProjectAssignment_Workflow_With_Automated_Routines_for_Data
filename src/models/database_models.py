@@ -1,6 +1,87 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Numeric, CheckConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Numeric, CheckConstraint, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker, scoped_session
+from sqlalchemy.pool import QueuePool
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
+from contextlib import contextmanager
+import os
+from dotenv import load_dotenv
+import logging
+from typing import Generator
+import time
+from functools import wraps
+
+# Konfigurera logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Ladda miljövariabler
+load_dotenv()
+
+# Databasanslutningskonfiguration
+DB_CONFIG = {
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': os.getenv('DB_PORT', '5432'),
+    'database': os.getenv('DB_NAME', 'bank_db'),
+    'user': os.getenv('DB_USER', 'postgres'),
+    'password': os.getenv('DB_PASSWORD', '')
+}
+
+# Skapa connection URL
+DATABASE_URL = f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+
+# Retry decorator för databasoperationer
+def retry_on_error(max_retries: int = 3, delay: float = 1.0):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func(*args, **kwargs)
+                except SQLAlchemyError as e:
+                    retries += 1
+                    if retries == max_retries:
+                        logger.error(f"Max retries ({max_retries}) reached. Error: {str(e)}")
+                        raise
+                    logger.warning(f"Database operation failed. Retrying ({retries}/{max_retries})...")
+                    time.sleep(delay * retries)
+            return None
+        return wrapper
+    return decorator
+
+# Skapa engine med connection pooling
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=QueuePool,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,  # Recycle connections after 30 minutes
+    echo=bool(os.getenv('SQL_ECHO', 'False'))
+)
+
+# Skapa session factory
+SessionFactory = sessionmaker(bind=engine)
+ScopedSession = scoped_session(SessionFactory)
+
+# Context manager för sessionshantering
+@contextmanager
+def session_scope() -> Generator:
+    """Provide a transactional scope around a series of operations."""
+    session = ScopedSession()
+    try:
+        yield session
+        session.commit()
+    except SQLAlchemyError as e:
+        logger.error(f"Database error occurred: {str(e)}")
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 Base = declarative_base()
 
