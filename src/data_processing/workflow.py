@@ -9,7 +9,8 @@ from typing import Tuple, Dict, List
 import logging
 from pathlib import Path
 
-from ..utils.validators import validate_transaction, validate_customer
+from .transaction_validator import TransactionValidator
+from ..utils.validators import validate_customer
 from ..utils.monitoring import monitor
 from ..models.database_models import session_scope
 
@@ -29,22 +30,26 @@ def validate_transactions(transactions_df: pd.DataFrame) -> Tuple[pd.DataFrame, 
     """
     Validate transactions and split into valid and invalid.
     """
+    validator = TransactionValidator()
     validation_results = []
     
-    for _, row in transactions_df.iterrows():
-        errors = validate_transaction(row.to_dict())
+    for idx, row in transactions_df.iterrows():
+        # Convert row to dict for validation
+        transaction = row.to_dict()
+        
+        # Validate transaction
+        errors = validator.validate_transaction(transaction)
+        
         validation_results.append({
-            'index': _,
+            'index': idx,
             'valid': len(errors) == 0,
             'errors': errors
         })
         
         # Log validation result
-        monitor.log_validation_result(
-            validation_type='transaction',
-            passed=len(errors) == 0,
-            errors=errors
-        )
+        logger.info(f"Transaction {idx}: {'Valid' if len(errors) == 0 else 'Invalid'}")
+        if errors:
+            logger.warning(f"Transaction {idx} errors: {errors}")
     
     # Create mask for valid/invalid transactions
     valid_mask = [r['valid'] for r in validation_results]
@@ -52,6 +57,10 @@ def validate_transactions(transactions_df: pd.DataFrame) -> Tuple[pd.DataFrame, 
     # Split dataframe
     valid_transactions = transactions_df[valid_mask].copy()
     invalid_transactions = transactions_df[~pd.Series(valid_mask)].copy()
+    
+    # Log summary
+    logger.info(f"Valid transactions: {len(valid_transactions)}")
+    logger.info(f"Invalid transactions: {len(invalid_transactions)}")
     
     return valid_transactions, invalid_transactions
 
@@ -96,6 +105,7 @@ def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.Dat
             # Export customers first (due to foreign key constraints)
             valid_customers.to_sql('customers', session.bind, if_exists='append', index=False)
             valid_transactions.to_sql('transactions', session.bind, if_exists='append', index=False)
+            logger.info("Successfully exported data to database")
         return True
     except Exception as e:
         logger.error(f"Database export failed: {str(e)}")
@@ -116,27 +126,28 @@ def validate_and_load(
     """
     Main workflow for data validation and loading.
     """
-    # Reset metrics for new run
-    monitor.reset_metrics()
+    logger.info("Starting data validation workflow")
     
     # Load data
     transactions_df, customers_df = load_data(transactions_path, customers_path)
+    logger.info(f"Loaded {len(transactions_df)} transactions and {len(customers_df)} customer records")
     
-    # Validate data
+    # Validate transactions
     valid_transactions, invalid_transactions = validate_transactions(transactions_df)
-    valid_customers, invalid_customers = validate_customers(customers_df)
     
     # Export valid data to database
-    export_success = export_to_database(valid_transactions, valid_customers)
+    export_success = export_to_database(valid_transactions, customers_df)
     
-    # Generate report
-    report = generate_report()
+    # Prepare report
+    report = {
+        'total_transactions': len(transactions_df),
+        'valid_transactions': len(valid_transactions),
+        'invalid_transactions': len(invalid_transactions),
+        'database_export_success': export_success
+    }
     
-    # Add export status to report
-    report['database_export_success'] = export_success
-    
+    logger.info(f"Workflow completed. Report: {report}")
     return report
 
 if __name__ == "__main__":
-    # Run the flow
-    report = validate_and_load() 
+    validate_and_load() 

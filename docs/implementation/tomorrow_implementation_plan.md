@@ -1,205 +1,80 @@
-# Implementation Plan for June 3, 2025
+# Implementation Plan - Next Phase
 
-## Reference to Previous Work
+## 1. Transaction Validation System
 
-### June 1, 2025 Progress:
-1. **Core Implementation**:
-   - Implemented SessionFactory with connection pooling
-   - Added error handling with retry mechanism
-   - Set up environment configuration with dotenv
-   - Enhanced database test framework
+### 1.1 Transaction Amount Validation
+- Implement validation for transaction amounts
+- Check for reasonable limits
+- Flag suspicious transactions
+- Add currency validation and conversion support
 
-2. **Documentation**: 
-   - `docs/development/daily_logs/2025_05_31.md`
-   - Analysis of project structure
-   - Identification of core modules
+### 1.2 Transaction Category Classification
+- Create system for categorizing transactions
+- Implement validation rules for each category
+- Add support for custom categories
+- Create reporting system for category statistics
 
-### June 2, 2025 Progress:
-1. **Database Work**:
-   - Completed database structure
-   - Implemented migrations
-   - Set up transaction handling
-   - Added rollback support
+### 1.3 Transaction Frequency Analysis
+- Implement checks for unusual transaction patterns
+- Create time-based analysis tools
+- Add support for recurring transaction detection
+- Implement fraud detection patterns
 
-2. **Documentation**:
-   - `docs/development/daily_logs/2025_06_02.md`
-   - Database structure documentation
-   - Migration documentation
+## 2. Implementation Steps
 
-### Today's Progress (June 2 Evening):
-1. **Initial Jupyter Setup**:
-   - Successfully set up notebook environment
-   - Loaded and verified data files:
-     * transactions.csv (100,000 records)
-     * sebank_customers_with_accounts.csv (1,000 records)
-   - Created basic visualizations
-   - Verified data access paths
+### Day 1: Basic Transaction Validation
+1. Create `TransactionValidator` class
+2. Implement basic amount validation
+3. Add currency support
+4. Create test suite for transaction validation
 
-2. **Implementation Files**:
-   - `src/utils/validators.py` - Core validation functions
-   - `src/utils/monitoring.py` - Monitoring and metrics
-   - `src/data_processing/workflow.py` - Prefect workflow
+### Day 2: Transaction Categories
+1. Implement category system
+2. Create category validation rules
+3. Add category statistics tracking
+4. Update test suite with category tests
 
-3. **Documentation**:
-   - `docs/development/daily_logs/2024_06_03_jupyter_setup.md`
-   - Current notebook: `notebooks/data_quality_validation.ipynb`
+### Day 3: Transaction Analysis
+1. Implement frequency analysis
+2. Add pattern detection
+3. Create reporting system
+4. Complete test coverage
 
-### Known Issues to Address:
-1. Notebook trust warning needs resolution
-2. Some language servers not installed (non-critical)
-3. Websocket timeout configuration needs adjustment
+## 3. Files to Create/Modify
 
-## Required Files and Resources
+1. `src/data_processing/transaction_validator.py`
+   - Main transaction validation logic
+   - Amount and currency validation
+   - Category validation
 
-### Data Files
-1. Original Data:
-   - `data/original/transactions.csv` (100,000 records)
-   - `data/original/sebank_customers_with_accounts.csv` (1,000 records)
+2. `src/data_processing/transaction_analyzer.py`
+   - Transaction pattern analysis
+   - Frequency checking
+   - Statistical analysis
 
-### Source Code Files
-1. Database Models:
-   - `src/models/database_models.py` - Contains SQLAlchemy models
-   - `src/database/migrations/` - Database migrations
+3. `tests/transaction_tests.ipynb`
+   - Comprehensive test suite
+   - Example scenarios
+   - Performance testing
 
-2. Validation Files:
-   - `notebooks/data_quality_validation.ipynb` - Main validation notebook
-   - `src/utils/validators.py` - Custom validation functions
+## 4. Success Criteria
 
-3. Workflow Files:
-   - `src/data_processing/workflow.py` - Prefect workflow definitions
-   - `src/utils/monitoring.py` - Monitoring utilities
+1. All transaction validations pass test suite
+2. Category system correctly classifies >95% of transactions
+3. Pattern detection identifies known suspicious patterns
+4. System handles both SEK and international currencies
+5. Performance meets required processing speed
 
-## Implementation Schedule
+## 5. Dependencies
 
-### 09:00-10:30: Data Validation Implementation
-**Location**: `notebooks/data_quality_validation.ipynb`
-**Dependencies**:
-- Great Expectations
-- Pandas
-- NumPy
-- Matplotlib/Seaborn
+1. Currency conversion API
+2. Transaction category database
+3. Pattern matching library
+4. Statistical analysis tools
 
-**Tasks**:
-1. Load and validate transaction data:
-```python
-import great_expectations as ge
-import pandas as pd
+## 6. Risk Management
 
-# Load data
-transactions_df = pd.read_csv('../data/original/transactions.csv')
-customers_df = pd.read_csv('../data/original/sebank_customers_with_accounts.csv')
-
-# Create Great Expectations DataContext
-context = ge.data_context.DataContext()
-```
-
-2. Implement validation rules:
-   - Transaction format validation
-   - Account number validation
-   - Amount validation
-   - Geographic validation (domestic vs international)
-
-### 10:30-12:00: Database Integration
-**Location**: `src/database/`
-**Dependencies**:
-- SQLAlchemy
-- Psycopg2
-- Alembic
-
-**Tasks**:
-1. Implement transaction handling:
-```python
-from sqlalchemy import create_engine
-from contextlib import contextmanager
-
-@contextmanager
-def transaction_scope():
-    """Provide a transactional scope around a series of operations."""
-    try:
-        yield session
-        session.commit()
-    except:
-        session.rollback()
-        raise
-```
-
-2. Set up data export functions:
-```python
-def export_to_database(validated_df, table_name):
-    """Export validated data to PostgreSQL with transaction support."""
-    with transaction_scope() as session:
-        validated_df.to_sql(table_name, session.bind, if_exists='append')
-```
-
-### 13:00-14:00: Workflow Automation
-**Location**: `src/data_processing/workflow.py`
-**Dependencies**:
-- Prefect
-- Great Expectations
-- SQLAlchemy
-
-**Tasks**:
-1. Create Prefect flow:
-```python
-from prefect import flow, task
-
-@flow(name="data_validation_flow")
-def validate_and_load():
-    # 1. Load data
-    # 2. Validate
-    # 3. Export to database
-    # 4. Generate report
-```
-
-### 14:00-15:00: Reporting System
-**Location**: `notebooks/data_quality_validation.ipynb`
-**Dependencies**:
-- Matplotlib
-- Seaborn
-- Pandas
-
-**Tasks**:
-1. Create visualization functions
-2. Generate validation reports
-3. Export results
-
-### 15:00-16:00: Testing
-**Test Files**:
-- `tests/test_validation.py`
-- `tests/test_database.py`
-- `tests/test_workflow.py`
-
-**Tasks**:
-1. Test with 100,000 transactions
-2. Verify rollback functionality
-3. Test complete workflow
-
-### 16:00-17:00: Documentation
-**Files to Update**:
-- `README.md`
-- `docs/implementation/implementation_plan.md`
-- `docs/development/daily_logs/2025_06_04.md`
-
-## Required Package Installation
-```bash
-pip install great_expectations prefect sqlalchemy psycopg2-binary pandas numpy matplotlib seaborn
-```
-
-## Database Configuration
-```python
-# Database connection string format
-DATABASE_URL = "postgresql://user:password@localhost:5432/bankdb"
-```
-
-## Success Criteria
-1. ✓ All validation rules implemented and tested
-2. ✓ Database export working with rollback support
-3. ✓ Automated workflow running successfully
-4. ✓ Complete report generation in notebook
-5. ✓ All tests passing
-
-## Risk Mitigation
-1. Regular commits to Git
-2. Backup of database before major operations
-3. Test with small dataset before full implementation
-4. Document all changes and decisions 
+1. Currency conversion accuracy
+2. Pattern detection false positives
+3. Performance with large transaction volumes
+4. Data privacy compliance 
