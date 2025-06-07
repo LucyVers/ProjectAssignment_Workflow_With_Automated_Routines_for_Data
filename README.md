@@ -32,18 +32,21 @@ Implemented with validation for:
 
 ## Project Structure
 ```
-project/
-├── src/
-│   ├── data_processing/
-│   ├── database/
-│   ├── validation/
-│   └── workflow/
-├── tests/
-├── docs/
-│   ├── development/
-│   └── user_guides/
-└── notebooks/
+ProjectAssignment_Workflow_With_Automated_Routines_for_Data/
+├── src/                    # Source code
+│   └── data_processing/    # Data processing modules
+│       └── workflow.py     # Main workflow
+├── data/                   # Data directory
+│   ├── working/           # Working data files
+│   └── original/          # Original data files
+└── notebooks/             # Jupyter notebooks
 ```
+
+### Important Note on File Paths
+- The project uses relative file paths from the module locations
+- Data files are accessed using `../data/working/` from source files
+- When running scripts, ensure you're in the correct directory
+- All paths are relative to maintain portability across systems
 
 ## Documentation
 - [Project Requirements](docs/project_requirements.txt)

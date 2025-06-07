@@ -3,16 +3,18 @@ Automated workflow for data validation and processing using Prefect.
 """
 from prefect import flow, task
 from prefect.tasks import task_input_hash
-from datetime import timedelta
+from datetime import timedelta, datetime
 import pandas as pd
 from typing import Tuple, Dict, List
 import logging
 from pathlib import Path
+import math
+import re
 
-from .transaction_validator import TransactionValidator
-from ..utils.validators import validate_customer
-from ..utils.monitoring import monitor
-from ..models.database_models import session_scope
+from src.data_processing.transaction_validator import TransactionValidator
+from src.data_processing.data_validator import DataValidator
+from src.utils.monitoring import monitor
+from src.models.database_models import session_scope, Customer, Account, Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -69,25 +71,58 @@ def validate_customers(customers_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Dat
     """
     Validate customer data and split into valid and invalid.
     """
-    validation_results = []
+    # Initialize DataValidator with the customer data
+    validator = DataValidator(customers_df)
     
-    for _, row in customers_df.iterrows():
-        errors = validate_customer(row.to_dict())
-        validation_results.append({
-            'index': _,
-            'valid': len(errors) == 0,
+    # Run all validations
+    validation_results = validator.validate_all()
+    
+    # Create validation results list for each customer
+    results = []
+    for idx, row in customers_df.iterrows():
+        # Check if this customer has any validation errors
+        has_errors = False
+        errors = []
+        
+        # Check personnummer validation
+        pnr = row['Personnummer']
+        if pnr in validation_results['personnummer'].get('invalid_check_digits', []):
+            has_errors = True
+            errors.append("Invalid personnummer check digit")
+        if pnr in validation_results['personnummer'].get('invalid_dates', []):
+            has_errors = True
+            errors.append("Invalid personnummer date")
+            
+        # Check address validation
+        address = row['Address']
+        if address in validation_results['address'].get('invalid_format', []):
+            has_errors = True
+            errors.append("Invalid address format")
+        if address in validation_results['address'].get('missing_postal_code', []):
+            has_errors = True
+            errors.append("Missing postal code")
+            
+        # Check phone validation
+        phone = row['Phone']
+        if phone in validation_results['phone'].get('invalid', []):
+            has_errors = True
+            errors.append("Invalid phone number format")
+        
+        results.append({
+            'index': idx,
+            'valid': not has_errors,
             'errors': errors
         })
         
         # Log validation result
         monitor.log_validation_result(
             validation_type='customer',
-            passed=len(errors) == 0,
+            passed=not has_errors,
             errors=errors
         )
     
     # Create mask for valid/invalid customers
-    valid_mask = [r['valid'] for r in validation_results]
+    valid_mask = [r['valid'] for r in results]
     
     # Split dataframe
     valid_customers = customers_df[valid_mask].copy()
@@ -95,21 +130,285 @@ def validate_customers(customers_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Dat
     
     return valid_customers, invalid_customers
 
-@task
-def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.DataFrame) -> bool:
+def process_batch(df: pd.DataFrame, table_name: str, session, batch_size: int, start_idx: int) -> bool:
     """
-    Export validated data to database with transaction support.
+    Process a single batch of data.
+    """
+    end_idx = start_idx + batch_size
+    batch = df.iloc[start_idx:end_idx]
+    
+    try:
+        batch.to_sql(table_name, session.bind, if_exists='append', index=False)
+        logger.info(f"Successfully exported batch {start_idx//batch_size + 1} to {table_name} "
+                   f"(rows {start_idx} to {end_idx})")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to export batch {start_idx//batch_size + 1} to {table_name}: {str(e)}")
+        return False
+
+def format_phone_number(phone: str) -> str:
+    """
+    Format phone numbers to international format: +XX(Y)ZZZZ...
+    where:
+    - XX is country code (1-3 digits)
+    - Y is area code (1-4 digits)
+    - Z is the rest of the number
+    
+    Handles:
+    1. Local Swedish numbers (0X-XXX XX XX -> +46(X)XXX XX XX)
+    2. International numbers (keeps them as is, just reformats if needed)
+    3. Numbers with or without spaces/dashes
+    """
+    if not phone or pd.isna(phone):
+        return None
+        
+    # Remove all non-digit characters except + if it exists at the start
+    has_plus = phone.startswith('+')
+    digits = ''.join(filter(str.isdigit, phone))
+    
+    # Handle Swedish local format (starting with 0)
+    if digits.startswith('0'):
+        # For Swedish numbers, we know the exact format:
+        # 0XX-XXX XX XX or 0XXX-XXX XX XX
+        if len(digits) < 9:  # Too short for a Swedish number
+            return None
+            
+        # Remove leading 0 and split into area code and main number
+        digits = digits[1:]  # Remove leading 0
+        if len(digits) == 10:  # 3-digit area code
+            area_code = digits[:3]
+            main_number = digits[3:]
+        else:  # 2-digit area code
+            area_code = digits[:2]
+            main_number = digits[2:]
+            
+        return f"+46({area_code}){main_number}"
+    
+    # Handle international format
+    elif has_plus:
+        # First 1-3 digits are country code
+        if len(digits) < 4:  # Need at least: 1 digit country code, 1 digit area code, 1 digit number
+            return None
+            
+        # Try to determine country code length (usually 1-3 digits)
+        if digits.startswith('1'):  # North America
+            country_code = digits[:1]
+            rest = digits[1:]
+        elif digits.startswith('7'):  # Russia
+            country_code = digits[:1]
+            rest = digits[1:]
+        elif digits[:3] in ['380', '381']:  # Some 3-digit country codes
+            country_code = digits[:3]
+            rest = digits[3:]
+        else:  # Most European/Asian countries (2 digits)
+            country_code = digits[:2]
+            rest = digits[2:]
+            
+        # For international numbers, take first 2-3 digits as area code
+        area_code = rest[:3]
+        main_number = rest[3:]
+        
+        return f"+{country_code}({area_code}){main_number}"
+    
+    # If number doesn't start with + or 0, it's invalid
+    return None
+
+def prepare_customer_data(customers_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Prepare customer data for database import by mapping CSV columns to database columns
+    and extracting address components.
+    """
+    # Create a copy to avoid modifying the original data
+    db_ready_df = customers_df.copy()
+    
+    # Drop duplicates based on personnummer to get unique customers
+    db_ready_df = db_ready_df.drop_duplicates(subset=['Personnummer'])
+    
+    # Extract address components using regex
+    address_pattern = r'(.*?),\s*(\d{5})\s*(.*)'
+    address_components = db_ready_df['Address'].str.extract(address_pattern)
+    db_ready_df['address'] = address_components[0]
+    db_ready_df['postal_code'] = address_components[1]
+    db_ready_df['city'] = address_components[2]
+    
+    # Map columns to match database schema
+    db_ready_df = db_ready_df.rename(columns={
+        'Customer': 'name',  # Changed back to 'Customer' to match the actual CSV column name
+        'Phone': 'phone',
+        'Personnummer': 'personnummer'
+    })
+    
+    # Format phone numbers
+    db_ready_df['phone'] = db_ready_df['phone'].apply(format_phone_number)
+    
+    # Add guardian_info as NULL for adults
+    db_ready_df['guardian_info'] = None
+    
+    # Add bank_id
+    db_ready_df['bank_id'] = 1
+    
+    # Select only the columns we need in the exact order they appear in the database
+    # Order from database: id, bank_id, personnummer, name, phone, address, city, postal_code, guardian_info
+    # Note: id is auto-generated, so we exclude it
+    return db_ready_df[['bank_id', 'personnummer', 'name', 'phone', 'address', 'city', 'postal_code', 'guardian_info']]
+
+def prepare_account_data(customers_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Prepare account data for database import.
+    """
+    # Create a copy to avoid modifying the original data
+    db_ready_df = customers_df.copy()
+    
+    # Generate account numbers in the correct format: SE8902[A-Z]{4}\d{14}
+    def generate_account_number():
+        import random
+        import string
+        letters = ''.join(random.choices(string.ascii_uppercase, k=4))
+        digits = ''.join(str(random.randint(0, 9)) for _ in range(14))
+        return f"SE8902{letters}{digits}"
+    
+    # Create account numbers for each customer
+    db_ready_df['account_number'] = [generate_account_number() for _ in range(len(db_ready_df))]
+    
+    # Add other required fields
+    db_ready_df['type'] = 'checking'  # Default account type
+    db_ready_df['created_at'] = pd.Timestamp.now()
+    db_ready_df['bank_id'] = 1  # Add bank_id
+    
+    # Keep personnummer for mapping to customer_id later
+    db_ready_df['personnummer'] = customers_df['Personnummer']
+    
+    # Select only the columns we need in the exact order they appear in the database
+    # plus personnummer for mapping
+    return db_ready_df[['account_number', 'type', 'created_at', 'bank_id', 'personnummer']]
+
+def prepare_transaction_data(transactions_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Prepare transaction data for database import
+    """
+    # Create a copy to avoid modifying the original data
+    db_ready_df = transactions_df.copy()
+    
+    # Map columns to match database schema
+    db_ready_df = db_ready_df.rename(columns={
+        'TransactionID': 'transaction_id',
+        'AccountID': 'account_number',  # This should match the account number in the accounts table
+        'Amount': 'amount',
+        'Currency': 'currency',
+        'Timestamp': 'timestamp',
+        'SenderCountry': 'sender_country',
+        'SenderMunicipality': 'sender_municipality',
+        'ReceiverCountry': 'receiver_country',
+        'ReceiverMunicipality': 'receiver_municipality',
+        'TransactionType': 'transaction_type'
+    })
+    
+    return db_ready_df
+
+@task
+def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.DataFrame, 
+                      batch_size: int = 1000) -> bool:
+    """
+    Export validated data to database with batch processing support.
     """
     try:
         with session_scope() as session:
-            # Export customers first (due to foreign key constraints)
-            valid_customers.to_sql('customers', session.bind, if_exists='append', index=False)
-            valid_transactions.to_sql('transactions', session.bind, if_exists='append', index=False)
-            logger.info("Successfully exported data to database")
-        return True
+            # Prepare data for database import
+            db_ready_customers = prepare_customer_data(valid_customers)
+            db_ready_accounts = prepare_account_data(valid_customers)
+            db_ready_transactions = prepare_transaction_data(valid_transactions)
+            
+            # Process customers first
+            logger.info(f"Starting customer export in batches of {batch_size}")
+            total_customer_batches = math.ceil(len(db_ready_customers) / batch_size)
+            
+            customer_id_map = {}  # To store personnummer -> customer_id mapping
+            
+            for batch_num in range(total_customer_batches):
+                start_idx = batch_num * batch_size
+                end_idx = start_idx + batch_size
+                customer_batch = db_ready_customers.iloc[start_idx:end_idx]
+                
+                for _, row in customer_batch.iterrows():
+                    customer = Customer(
+                        name=row['name'],
+                        address=row['address'],
+                        postal_code=row['postal_code'],
+                        city=row['city'],
+                        phone=row['phone'],
+                        personnummer=row['personnummer'],
+                        bank_id=row['bank_id'],
+                        guardian_info=row['guardian_info']
+                    )
+                    session.add(customer)
+                    session.flush()  # Get the ID without committing
+                    customer_id_map[row['personnummer']] = customer.id
+                
+                session.commit()
+                logger.info(f"Processed customer batch {batch_num + 1}/{total_customer_batches}")
+            
+            # Process accounts next
+            logger.info(f"Starting account export in batches of {batch_size}")
+            total_account_batches = math.ceil(len(db_ready_accounts) / batch_size)
+            
+            account_number_map = {}  # To store account_number -> account_id mapping
+            
+            for batch_num in range(total_account_batches):
+                start_idx = batch_num * batch_size
+                end_idx = start_idx + batch_size
+                account_batch = db_ready_accounts.iloc[start_idx:end_idx]
+                
+                for _, row in account_batch.iterrows():
+                    customer_id = customer_id_map.get(row['personnummer'])
+                    if customer_id:
+                        account = Account(
+                            account_number=row['account_number'],
+                            customer_id=customer_id,
+                            bank_id=row['bank_id'],
+                            type=row['type'],
+                            created_at=row['created_at']
+                        )
+                        session.add(account)
+                        session.flush()  # Get the ID without committing
+                        account_number_map[row['account_number']] = account.id
+                
+                session.commit()
+                logger.info(f"Processed account batch {batch_num + 1}/{total_account_batches}")
+            
+            # Finally, process transactions
+            logger.info(f"Starting transaction export in batches of {batch_size}")
+            total_transaction_batches = math.ceil(len(db_ready_transactions) / batch_size)
+            
+            for batch_num in range(total_transaction_batches):
+                start_idx = batch_num * batch_size
+                end_idx = start_idx + batch_size
+                transaction_batch = db_ready_transactions.iloc[start_idx:end_idx]
+                
+                for _, row in transaction_batch.iterrows():
+                    account_id = account_number_map.get(row['account_number'])
+                    if account_id:
+                        transaction = Transaction(
+                            transaction_id=row['transaction_id'],
+                            account_id=account_id,
+                            amount=row['amount'],
+                            currency=row['currency'],
+                            timestamp=row['timestamp'],
+                            sender_country=row['sender_country'],
+                            sender_municipality=row['sender_municipality'],
+                            receiver_country=row['receiver_country'],
+                            receiver_municipality=row['receiver_municipality'],
+                            transaction_type=row['transaction_type']
+                        )
+                        session.add(transaction)
+                
+                session.commit()
+                logger.info(f"Processed transaction batch {batch_num + 1}/{total_transaction_batches}")
+            
+            return True
+            
     except Exception as e:
-        logger.error(f"Database export failed: {str(e)}")
-        return False
+        logger.error(f"Failed to export data to database: {str(e)}")
+        raise
 
 @task
 def generate_report() -> Dict:
@@ -120,8 +419,9 @@ def generate_report() -> Dict:
 
 @flow(name="data_validation_flow")
 def validate_and_load(
-    transactions_path: str = "../data/original/transactions.csv",
-    customers_path: str = "../data/original/sebank_customers_with_accounts.csv"
+    transactions_path: str = "data/working/transactions.csv",
+    customers_path: str = "data/working/sebank_customers_with_accounts.csv",
+    batch_size: int = 500  # Changed default to 500 for safer initial testing
 ) -> Dict:
     """
     Main workflow for data validation and loading.
@@ -132,18 +432,30 @@ def validate_and_load(
     transactions_df, customers_df = load_data(transactions_path, customers_path)
     logger.info(f"Loaded {len(transactions_df)} transactions and {len(customers_df)} customer records")
     
-    # Validate transactions
+    # Validate both transactions and customers
     valid_transactions, invalid_transactions = validate_transactions(transactions_df)
+    valid_customers, invalid_customers = validate_customers(customers_df)
     
-    # Export valid data to database
-    export_success = export_to_database(valid_transactions, customers_df)
+    # Export valid data to database with batch processing
+    export_success = export_to_database(
+        valid_transactions, 
+        valid_customers,
+        batch_size=batch_size
+    )
     
-    # Prepare report
+    # Generate validation report
+    validation_report = generate_report()
+    
+    # Prepare final report
     report = {
         'total_transactions': len(transactions_df),
         'valid_transactions': len(valid_transactions),
         'invalid_transactions': len(invalid_transactions),
-        'database_export_success': export_success
+        'total_customers': len(customers_df),
+        'valid_customers': len(valid_customers),
+        'invalid_customers': len(invalid_customers),
+        'database_export_success': export_success,
+        'validation_details': validation_report
     }
     
     logger.info(f"Workflow completed. Report: {report}")

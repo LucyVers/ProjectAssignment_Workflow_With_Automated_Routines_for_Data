@@ -1,3 +1,3 @@
 """
-This module contains the core functionality of the data quality validation system.
+Main package for data quality project.
 """ 

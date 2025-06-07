@@ -4,9 +4,12 @@ from datetime import datetime
 from typing import Dict, List, Set, Tuple
 
 class DataValidator:
-    def __init__(self, data_file: str):
-        """Initialize validator with data file path"""
-        self.df = pd.read_csv(data_file)
+    def __init__(self, data: str | pd.DataFrame):
+        """Initialize validator with data file path or DataFrame"""
+        if isinstance(data, str):
+            self.df = pd.read_csv(data)
+        else:
+            self.df = data
         self.validation_results = {
             'personnummer': {},
             'address': {},
@@ -228,39 +231,24 @@ class DataValidator:
         return f"+46 (0){national_number[:3]} {national_number[3:6]} {national_number[6:8]} {national_number[8:]}"
 
     def validate_account_numbers(self) -> None:
-        """Validate bank account numbers according to SE8902[A-Z]{4}\d{14} format"""
+        """Validate bank account numbers."""
         results = {
             'invalid_format': [],
-            'invalid_bank_code': [],
-            'invalid_length': [],
             'duplicates': []
         }
         
-        # Get unique account numbers to check for duplicates
-        unique_accounts = self.df['AccountNumber'].unique()
-        if len(unique_accounts) < len(self.df['AccountNumber']):
-            results['duplicates'] = self.df[self.df['AccountNumber'].duplicated()]['AccountNumber'].tolist()
-
+        # Get unique account numbers
+        unique_accounts = self.df['BankAccount'].unique()
+        
+        # Check for duplicates
+        if len(unique_accounts) < len(self.df['BankAccount']):
+            results['duplicates'] = self.df[self.df['BankAccount'].duplicated()]['BankAccount'].tolist()
+        
+        # Validate format for each unique account
         for account in unique_accounts:
-            # Check basic format
-            if not isinstance(account, str):
+            if not self._validate_account_format(account):
                 results['invalid_format'].append(account)
-                continue
-
-            # Check length
-            if len(account) != 24:  # SE8902 + 4 letters + 14 digits = 24
-                results['invalid_length'].append(account)
-                continue
-
-            # Validate format using regex
-            if not re.match(r'^SE8902[A-Z]{4}\d{14}$', account):
-                results['invalid_format'].append(account)
-                continue
-
-            # Validate bank code (8902)
-            if account[2:6] != '8902':
-                results['invalid_bank_code'].append(account)
-
+                
         self.validation_results['account_numbers'] = results
 
     @staticmethod
@@ -330,6 +318,21 @@ class DataValidator:
         relation = match.group(1).lower()
         valid_relations = {'parent', 'guardian', 'mother', 'father', 'förälder', 'vårdnadshavare'}
         if relation not in valid_relations:
+            return False
+            
+        return True
+
+    def _validate_account_format(self, account: str) -> bool:
+        """Validate bank account number format."""
+        if not isinstance(account, str):
+            return False
+            
+        # Check length
+        if len(account) != 24:  # SE8902 + 4 letters + 14 digits = 24
+            return False
+            
+        # Validate format using regex
+        if not re.match(r'^SE8902[A-Z]{4}\d{14}$', account):
             return False
             
         return True
