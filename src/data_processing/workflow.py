@@ -19,12 +19,21 @@ from src.models.database_models import session_scope, Customer, Account, Transac
 logger = logging.getLogger(__name__)
 
 @task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
-def load_data(transactions_path: str, customers_path: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_data(transactions_path: str = None, customers_path: str = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Load transaction and customer data from CSV files.
+    Load data from CSV files.
     """
-    transactions_df = pd.read_csv(transactions_path)
-    customers_df = pd.read_csv(customers_path)
+    transactions_df = pd.DataFrame()  # Empty DataFrame as default
+    customers_df = pd.DataFrame()     # Empty DataFrame as default
+    
+    if transactions_path:
+        transactions_df = pd.read_csv(transactions_path)
+        logger.info(f"Loaded {len(transactions_df)} transactions")
+    
+    if customers_path:
+        customers_df = pd.read_csv(customers_path)
+        logger.info(f"Loaded {len(customers_df)} customer records")
+    
     return transactions_df, customers_df
 
 @task
@@ -259,16 +268,8 @@ def prepare_account_data(customers_df: pd.DataFrame) -> pd.DataFrame:
     # Create a copy to avoid modifying the original data
     db_ready_df = customers_df.copy()
     
-    # Generate account numbers in the correct format: SE8902[A-Z]{4}\d{14}
-    def generate_account_number():
-        import random
-        import string
-        letters = ''.join(random.choices(string.ascii_uppercase, k=4))
-        digits = ''.join(str(random.randint(0, 9)) for _ in range(14))
-        return f"SE8902{letters}{digits}"
-    
-    # Create account numbers for each customer
-    db_ready_df['account_number'] = [generate_account_number() for _ in range(len(db_ready_df))]
+    # Use existing account numbers from BankAccount column
+    db_ready_df['account_number'] = db_ready_df['BankAccount']
     
     # Add other required fields
     db_ready_df['type'] = 'checking'  # Default account type
@@ -459,6 +460,91 @@ def validate_and_load(
     }
     
     logger.info(f"Workflow completed. Report: {report}")
+    return report
+
+@task
+def export_accounts_to_database(valid_customers: pd.DataFrame, batch_size: int = 1000) -> bool:
+    """
+    Export only account data to database with batch processing support.
+    """
+    try:
+        with session_scope() as session:
+            # Prepare account data
+            db_ready_accounts = prepare_account_data(valid_customers)
+            
+            # Get existing customer IDs from database
+            customer_id_map = {}
+            for _, row in valid_customers.iterrows():
+                customer = session.query(Customer).filter_by(personnummer=row['Personnummer']).first()
+                if customer:
+                    customer_id_map[row['Personnummer']] = customer.id
+            
+            # Process accounts
+            logger.info(f"Starting account export in batches of {batch_size}")
+            total_account_batches = math.ceil(len(db_ready_accounts) / batch_size)
+            
+            account_number_map = {}  # To store account_number -> account_id mapping
+            
+            for batch_num in range(total_account_batches):
+                start_idx = batch_num * batch_size
+                end_idx = start_idx + batch_size
+                account_batch = db_ready_accounts.iloc[start_idx:end_idx]
+                
+                for _, row in account_batch.iterrows():
+                    customer_id = customer_id_map.get(row['personnummer'])
+                    if customer_id:
+                        account = Account(
+                            account_number=row['account_number'],
+                            customer_id=customer_id,
+                            bank_id=row['bank_id'],
+                            type=row['type'],
+                            created_at=row['created_at']
+                        )
+                        session.add(account)
+                        session.flush()  # Get the ID without committing
+                        account_number_map[row['account_number']] = account.id
+                
+                session.commit()
+                logger.info(f"Processed account batch {batch_num + 1}/{total_account_batches}")
+            
+            return True
+            
+    except Exception as e:
+        logger.error(f"Failed to export accounts to database: {str(e)}")
+        raise
+
+@flow(name="account_import_flow")
+def import_accounts(
+    customers_path: str = "data/working/sebank_customers_with_accounts.csv",
+    batch_size: int = 500
+) -> Dict:
+    """
+    Workflow specifically for importing accounts.
+    """
+    logger.info("Starting account import workflow")
+    
+    # Load only customer data (which contains account information)
+    _, customers_df = load_data(customers_path=customers_path)
+    logger.info(f"Loaded {len(customers_df)} customer records with account information")
+    
+    # Validate customers (we need this to get the valid customer data structure)
+    valid_customers, invalid_customers = validate_customers(customers_df)
+    
+    # Export only accounts to database
+    export_success = export_accounts_to_database(
+        valid_customers,
+        batch_size=batch_size
+    )
+    
+    # Prepare final report
+    report = {
+        'total_customers_with_accounts': len(customers_df),
+        'valid_customers': len(valid_customers),
+        'invalid_customers': len(invalid_customers),
+        'database_export_success': export_success
+    }
+    
+    logger.info(f"Account import completed. Report: {report}")
     return report
 
 if __name__ == "__main__":
