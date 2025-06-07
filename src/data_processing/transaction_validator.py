@@ -103,7 +103,7 @@ class TransactionValidator:
     def _validate_transaction_type(self, transaction: Dict) -> List[str]:
         """Validates transaction type."""
         errors = []
-        valid_types = ['incoming', 'outgoing']
+        valid_types = ['debit', 'credit']  # Updated valid transaction types
         
         t_type = transaction.get('transaction_type', '').lower()
         if not t_type:

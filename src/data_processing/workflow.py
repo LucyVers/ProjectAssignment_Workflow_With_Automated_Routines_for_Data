@@ -27,11 +27,11 @@ def load_data(transactions_path: str = None, customers_path: str = None) -> Tupl
     customers_df = pd.DataFrame()     # Empty DataFrame as default
     
     if transactions_path:
-        transactions_df = pd.read_csv(transactions_path)
+    transactions_df = pd.read_csv(transactions_path)
         logger.info(f"Loaded {len(transactions_df)} transactions")
     
     if customers_path:
-        customers_df = pd.read_csv(customers_path)
+    customers_df = pd.read_csv(customers_path)
         logger.info(f"Loaded {len(customers_df)} customer records")
     
     return transactions_df, customers_df
@@ -293,7 +293,6 @@ def prepare_transaction_data(transactions_df: pd.DataFrame) -> pd.DataFrame:
     # Map columns to match database schema
     db_ready_df = db_ready_df.rename(columns={
         'TransactionID': 'transaction_id',
-        'AccountID': 'account_number',  # This should match the account number in the accounts table
         'Amount': 'amount',
         'Currency': 'currency',
         'Timestamp': 'timestamp',
@@ -303,6 +302,29 @@ def prepare_transaction_data(transactions_df: pd.DataFrame) -> pd.DataFrame:
         'ReceiverMunicipality': 'receiver_municipality',
         'TransactionType': 'transaction_type'
     })
+    
+    # Convert old transaction types to new debit/credit system
+    type_mapping = {
+        'incoming': 'debit',   # Money coming in (positive amount)
+        'outgoing': 'credit'   # Money going out (negative amount)
+    }
+    db_ready_df['transaction_type'] = db_ready_df['transaction_type'].map(type_mapping)
+    
+    # Ensure correct data types
+    db_ready_df['transaction_id'] = db_ready_df['transaction_id'].astype(str)
+    db_ready_df['sender_account'] = db_ready_df['sender_account'].astype(str)
+    db_ready_df['receiver_account'] = db_ready_df['receiver_account'].astype(str)
+    db_ready_df['amount'] = pd.to_numeric(db_ready_df['amount'], errors='coerce')
+    db_ready_df['currency'] = db_ready_df['currency'].astype(str)
+    db_ready_df['timestamp'] = pd.to_datetime(db_ready_df['timestamp'])
+    db_ready_df['sender_country'] = db_ready_df['sender_country'].astype(str)
+    db_ready_df['sender_municipality'] = db_ready_df['sender_municipality'].astype(str)
+    db_ready_df['receiver_country'] = db_ready_df['receiver_country'].astype(str)
+    db_ready_df['receiver_municipality'] = db_ready_df['receiver_municipality'].astype(str)
+    db_ready_df['transaction_type'] = db_ready_df['transaction_type'].astype(str)
+    
+    # Handle missing values
+    db_ready_df['notes'] = db_ready_df.get('notes', '').fillna('')
     
     return db_ready_df
 
@@ -323,7 +345,7 @@ def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.Dat
             logger.info(f"Starting customer export in batches of {batch_size}")
             total_customer_batches = math.ceil(len(db_ready_customers) / batch_size)
             
-            customer_id_map = {}  # To store personnummer -> customer_id mapping
+            customer_id_map = {}
             
             for batch_num in range(total_customer_batches):
                 start_idx = batch_num * batch_size
@@ -331,19 +353,34 @@ def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.Dat
                 customer_batch = db_ready_customers.iloc[start_idx:end_idx]
                 
                 for _, row in customer_batch.iterrows():
-                    customer = Customer(
-                        name=row['name'],
-                        address=row['address'],
-                        postal_code=row['postal_code'],
-                        city=row['city'],
-                        phone=row['phone'],
-                        personnummer=row['personnummer'],
-                        bank_id=row['bank_id'],
-                        guardian_info=row['guardian_info']
-                    )
-                    session.add(customer)
-                    session.flush()  # Get the ID without committing
-                    customer_id_map[row['personnummer']] = customer.id
+                    # Check if customer already exists
+                    existing_customer = session.query(Customer).filter_by(personnummer=row['personnummer']).first()
+                    
+                    if existing_customer:
+                        # Update existing customer
+                        existing_customer.name = row['name']
+                        existing_customer.address = row['address']
+                        existing_customer.postal_code = row['postal_code']
+                        existing_customer.city = row['city']
+                        existing_customer.phone = row['phone']
+                        existing_customer.bank_id = row['bank_id']
+                        existing_customer.guardian_info = row['guardian_info']
+                        customer_id_map[row['personnummer']] = existing_customer.id
+                    else:
+                        # Create new customer
+                        customer = Customer(
+                            name=row['name'],
+                            address=row['address'],
+                            postal_code=row['postal_code'],
+                            city=row['city'],
+                            phone=row['phone'],
+                            personnummer=row['personnummer'],
+                            bank_id=row['bank_id'],
+                            guardian_info=row['guardian_info']
+                        )
+                        session.add(customer)
+                        session.flush()  # Get the ID without committing
+                        customer_id_map[row['personnummer']] = customer.id
                 
                 session.commit()
                 logger.info(f"Processed customer batch {batch_num + 1}/{total_customer_batches}")
@@ -362,21 +399,32 @@ def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.Dat
                 for _, row in account_batch.iterrows():
                     customer_id = customer_id_map.get(row['personnummer'])
                     if customer_id:
-                        account = Account(
-                            account_number=row['account_number'],
-                            customer_id=customer_id,
-                            bank_id=row['bank_id'],
-                            type=row['type'],
-                            created_at=row['created_at']
-                        )
-                        session.add(account)
-                        session.flush()  # Get the ID without committing
-                        account_number_map[row['account_number']] = account.id
+                        # Check if account already exists
+                        existing_account = session.query(Account).filter_by(account_number=row['account_number']).first()
+                        
+                        if existing_account:
+                            # Update existing account
+                            existing_account.customer_id = customer_id
+                            existing_account.bank_id = row['bank_id']
+                            existing_account.type = row['type']
+                            account_number_map[row['account_number']] = existing_account.id
+                        else:
+                            # Create new account
+                            account = Account(
+                                account_number=row['account_number'],
+                                customer_id=customer_id,
+                                bank_id=row['bank_id'],
+                                type=row['type'],
+                                created_at=row['created_at']
+                            )
+                            session.add(account)
+                            session.flush()  # Get the ID without committing
+                            account_number_map[row['account_number']] = account.id
                 
                 session.commit()
                 logger.info(f"Processed account batch {batch_num + 1}/{total_account_batches}")
             
-            # Finally, process transactions
+            # Finally process transactions
             logger.info(f"Starting transaction export in batches of {batch_size}")
             total_transaction_batches = math.ceil(len(db_ready_transactions) / batch_size)
             
@@ -386,26 +434,47 @@ def export_to_database(valid_transactions: pd.DataFrame, valid_customers: pd.Dat
                 transaction_batch = db_ready_transactions.iloc[start_idx:end_idx]
                 
                 for _, row in transaction_batch.iterrows():
-                    account_id = account_number_map.get(row['account_number'])
-                    if account_id:
-                        transaction = Transaction(
-                            transaction_id=row['transaction_id'],
-                            account_id=account_id,
-                            amount=row['amount'],
+                    # Get account IDs from the mapping
+                    sender_account_id = account_number_map.get(row['sender_account'])
+                    receiver_account_id = account_number_map.get(row['receiver_account'])
+                    
+                    if sender_account_id and receiver_account_id:
+                        # Create credit entry (money leaving sender's account)
+                        credit_entry = Transaction(
+                            transaction_id=row['transaction_id'],  # Same transaction_id for both entries
+                            account_id=sender_account_id,
+                            amount=-row['amount'],  # Negative for credit (money leaving)
                             currency=row['currency'],
+                            transaction_type='credit',  # This entry is a credit
                             timestamp=row['timestamp'],
                             sender_country=row['sender_country'],
                             sender_municipality=row['sender_municipality'],
                             receiver_country=row['receiver_country'],
                             receiver_municipality=row['receiver_municipality'],
-                            transaction_type=row['transaction_type']
+                            notes=row.get('notes')
                         )
-                        session.add(transaction)
+                        session.add(credit_entry)
+
+                        # Create debit entry (money entering receiver's account)
+                        debit_entry = Transaction(
+                            transaction_id=row['transaction_id'],  # Same transaction_id for both entries
+                            account_id=receiver_account_id,
+                            amount=row['amount'],  # Positive for debit (money entering)
+                            currency=row['currency'],
+                            transaction_type='debit',  # This entry is a debit
+                            timestamp=row['timestamp'],
+                            sender_country=row['sender_country'],
+                            sender_municipality=row['sender_municipality'],
+                            receiver_country=row['receiver_country'],
+                            receiver_municipality=row['receiver_municipality'],
+                            notes=row.get('notes')
+                        )
+                        session.add(debit_entry)
                 
                 session.commit()
                 logger.info(f"Processed transaction batch {batch_num + 1}/{total_transaction_batches}")
             
-            return True
+        return True
             
     except Exception as e:
         logger.error(f"Failed to export data to database: {str(e)}")
