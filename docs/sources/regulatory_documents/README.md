@@ -7,10 +7,12 @@ This directory contains official regulatory documents and sources that form the 
 
 ```
 regulatory_documents/
-├── README.md                    # This file
-├── sources.md                   # List of all sources with metadata
-├── fi_kundkannedom_2024.pdf    # FI's customer due diligence requirements
-└── fi_penningtvatt_2024.pdf    # FI's anti-money laundering regulations
+├── README.md                         # This file
+├── sources.md                        # List of all sources with metadata
+├── fi_kundkannedom_2024.pdf         # FI's customer due diligence requirements
+├── kyc_requirements.md              # Detailed KYC process requirements
+├── fi_requirements.md               # Financial Inspectorate requirements
+└── swedish_transaction_patterns.md  # Analysis of Swedish transaction patterns
 ```
 
 ## Document Management
@@ -34,3 +36,5 @@ regulatory_documents/
 - Quarterly review of document currency
 - Update when new regulations are published
 - Archive outdated versions with clear documentation of changes 
+
+Last updated: June 7, 2025 

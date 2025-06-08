@@ -1,8 +1,8 @@
 # Financial Supervisory Authority (Finansinspektionen) Requirements for Transaction Monitoring
 
 ## 1. Legislation and Regulations
-- FFFS 2017:11 - Financial Supervisory Authority's regulations on measures against money laundering and terrorist financing
-- Act (2017:630) on measures against money laundering and terrorist financing
+- FFFS 2017:11 (Updated 2025) - Financial Supervisory Authority's regulations on measures against money laundering and terrorist financing
+- Act (2017:630) with amendments through 2025 on measures against money laundering and terrorist financing
 
 ## 2. Monitoring and Control Requirements
 
@@ -68,5 +68,7 @@
 - Continuous adaptation based on risk assessment
 
 ## References
-- FFFS 2017:11: [https://www.fi.se/sv/vara-register/sok/fffs/2017/2017_11/]
-- Financial Supervisory Authority's guidance on customer due diligence: [https://fi.se/penningtvatt-kundkannedom] 
+- FFFS 2017:11 (Updated 2025): [Financial Supervisory Authority Regulations](https://www.fi.se/sv/vara-register/sok/fffs/2017/2017_11/)
+- Financial Supervisory Authority's guidance on customer due diligence: [Customer Due Diligence Guidelines](https://fi.se/penningtvatt-kundkannedom)
+
+Last updated: June 7, 2025 

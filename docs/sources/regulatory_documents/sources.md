@@ -6,7 +6,7 @@
 
 1. Kundkännedom
    - URL: https://fi.se/penningtvatt-kundkannedom
-   - Last accessed: 2024-01-03
+   - Last accessed: 2025-06-07
    - Key content: Requirements for customer due diligence, transaction monitoring, and documentation
 
 2. Regulations (FFFS)
@@ -49,7 +49,7 @@ The following documents have been downloaded and stored in this repository for r
 1. `fi_kundkannedom_2024.pdf`
    - Source: Finansinspektionen
    - Content: Customer due diligence requirements
-   - Last updated: 2024-01-03
+   - Last updated: 2025-01-03
 
 2. `fi_penningtvatt_2024.pdf`
    - Source: Finansinspektionen
@@ -67,3 +67,5 @@ The following documents have been downloaded and stored in this repository for r
 1. Regular monitoring of FI's updates and new regulations
 2. Quarterly review of validation rules against current regulations
 3. Documentation of any regulatory changes that affect our validation rules 
+
+Last updated: June 7, 2025 

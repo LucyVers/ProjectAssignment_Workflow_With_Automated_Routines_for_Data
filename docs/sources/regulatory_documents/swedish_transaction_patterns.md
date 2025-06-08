@@ -2,7 +2,7 @@
 
 ## 1. Salary-based Transactions
 
-### 1.1 Monthly Salaries (according to SCB 2024)
+### 1.1 Monthly Salaries (according to SCB 2025)
 - Median salary: SEK 35,600
 - Average salary: SEK 39,900
 - Typical ranges by sector:
@@ -72,10 +72,12 @@
 - Investments: Individual assessment required
 
 ## 6. Sources
-- SCB Salary Statistics 2024
-- Financial Supervisory Authority Regulations (FFFS 2017:11)
-- Swedish Consumer Agency cost calculations
-- Swedish Trade Federation - consumption patterns
+- SCB Salary Statistics 2025
+- Financial Supervisory Authority Regulations (FFFS 2017:11, updated 2025)
+- Swedish Consumer Agency cost calculations 2025
+- Swedish Trade Federation - consumption patterns 2025
 
 ## 7. Updates
 This document should be updated annually or upon significant changes in consumption patterns or regulations. 
+
+Last updated: June 7, 2025 

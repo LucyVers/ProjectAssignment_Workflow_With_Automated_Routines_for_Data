@@ -1,82 +1,87 @@
-# Mall för Individuell Analys av Datakvalitetsprojektet
+# Individual Analysis of Data Quality Project
 
-## 1. Identifierade Datakvalitetsproblem och Lösningar
+## 1. Identified Data Quality Issues and Solutions
 
-### 1.1 Personnummerhantering
-- **Problem**: 419 duplicerade personnummer upptäckta
-- **Lösning**: 
-  * Implementerade unik constraint i databasen
-  * Skapade valideringsregler i data_validator.py
-  * Utvecklade duplikatdetektering i workflow
-- **Resultat**: Alla duplicerade personnummer identifierade och åtgärdade
+### 1.1 Personal ID Number Management
+- **Problem**: 419 duplicate personal ID numbers detected
+- **Solution**: 
+  * Implemented unique constraint in database
+  * Created validation rules in data_validator.py
+  * Developed duplicate detection in workflow
+- **Result**: All duplicate personal IDs identified and resolved
+- **Details**: See [Personal ID Verification](data_quality/duplicate_personnummer_analysis.md)
 
-### 1.2 Åldersverifiering
-- **Problem**: 55 minderåriga kunder utan förmyndarinformation
-- **Lösning**:
-  * Implementerade ålderskontroll i kundvalidering
-  * Lade till förmyndarinfo-krav för minderåriga
-  * Skapade automatisk flaggning av minderåriga konton
-- **Resultat**: Alla minderåriga konton har nu korrekt förmyndarinformation
+### 1.2 Age Verification
+- **Problem**: 55 minor customers without guardian information
+- **Solution**:
+  * Implemented age check in customer validation
+  * Added guardian info requirement for minors
+  * Created automatic flagging of minor accounts
+- **Result**: All minor accounts now have correct guardian information
+- **Details**: See [Age Verification Analysis](data_quality/age_verification_analysis.md)
 
-### 1.3 Adressvalidering
+### 1.3 Address Validation
 - **Problem**: 
-  * 998 ogiltiga postnummer
-  * 886 ogiltiga städer
-- **Lösning**:
-  * Implementerade postnummervalidering mot officiell databas
-  * Skapade stadsnamnsvalidering mot kommunlista
-  * Utvecklade standardiseringsregler för adressformat
-- **Resultat**: Alla adresser följer nu korrekt format och innehåller giltiga värden
+  * 998 invalid postal codes
+  * 886 invalid cities
+- **Solution**:
+  * Implemented postal code validation against official database
+  * Created city name validation against municipality list
+  * Developed standardization rules for address format
+- **Result**: All addresses now follow correct format and contain valid values
+- **Details**: See [Address Validation Analysis](data_quality/address_validation_analysis.md)
 
-### 1.4 Telefonnummerstandardisering
-- **Problem**: 459 icke-standardiserade telefonnummer
-- **Lösning**:
-  * Implementerade automatisk formatering till +46-format
-  * Skapade valideringsregler för olika nummerformat
-  * Utvecklade konverteringslogik för lokala/internationella nummer
-- **Resultat**: Alla telefonnummer följer nu standardformat
+### 1.4 Phone Number Standardization
+- **Problem**: 459 non-standardized phone numbers
+- **Solution**:
+  * Implemented automatic formatting to +46 format
+  * Created validation rules for different number formats
+  * Developed conversion logic for local/international numbers
+- **Result**: All phone numbers now follow standard format
+- **Details**: See [Phone Number Analysis](data_quality/phone_number_analysis.md)
 
-### 1.5 Geografisk Data
-- **Problem**: 500 transaktioner med saknade landskoder
-- **Lösning**:
-  * Implementerade obligatorisk landskod
-  * Utvecklade automatisk landskodidentifiering baserat på andra fält
-  * Skapade valideringsregler för geografisk data
-- **Resultat**: Alla transaktioner har nu kompletta geografiska data
+### 1.5 Geographic Data
+- **Problem**: 500 transactions with missing country codes
+- **Solution**:
+  * Implemented mandatory country code
+  * Developed automatic country code identification based on other fields
+  * Created validation rules for geographic data
+- **Result**: All transactions now have complete geographic data
+- **Details**: See [Missing Country Analysis](data_quality/missing_country_analysis.md)
 
-## 2. Tekniska Utmaningar och Lösningar
+## 2. Technical Challenges and Solutions
 
-### 2.1 Databashantering
-- Implementering av SQLAlchemy med constraints
-- Hantering av transaktioner och rollbacks
-- Optimering av databasanslutningar
+### 2.1 Database Management
+- Implementation of SQLAlchemy with constraints
+- Handling of transactions and rollbacks
+- Optimization of database connections
 
-### 2.2 Valideringsramverk
-- Utveckling av omfattande valideringsregler
-- Implementation av Great Expectations
-- Skapande av testfall och verifiering
+### 2.2 Validation Framework
+- Development of comprehensive validation rules
+- Implementation of Great Expectations
+- Creation of test cases and verification
 
 ### 2.3 Workflow Automation
-- Integration med Prefect
-- Skapande av automatiserade arbetsflöden
-- Implementering av felhantering och återförsök
+- Integration with Prefect
+- Creation of automated workflows
+- Implementation of error handling and retries
 
-### 2.4 Skalbarhet och Prestandaoptimering
-- **Utmaning**: Hantering av Storskalig Databearbetning
-  * Behov av att processa 1 miljon transaktioner per dag
-  * Risk för minnesöverbelastning vid stora datamängder
-  * Potentiella flaskhalsar i databasanslutningar
-  * Behov av effektiv resursanvändning
+### 2.4 Scalability and Performance Optimization
+- **Challenge**: Handling of Large Data Processing
+  * Need to process 1 million transactions per day
+  * Risk of memory overload with large data sets
+  * Potential bottlenecks in database connections
+  * Need for efficient resource utilization
 
-- **Implementerade Lösningar**:
+- **Implemented Solutions**:
   1. **Batch-Processing**
-     * Implementerade chunk-baserad databearbetning
-     * Konfigurerbar batch-storlek (standard: 500 records)
-     * Fördelar:
-       - Minimerar minnesanvändning
-       - Möjliggör parallell bearbetning
-       - Enklare felhantering och återhämtning
-     * Implementation i workflow.py:
+     * Implemented chunk-based data processing
+     * Configurable batch size (standard: 500 records)
+     * Advantages:
+       - Minimizes memory usage
+       - Allows parallel processing
+       - Easier error handling and recovery
+     * Implementation in workflow.py:
        ```python
        def process_batch(df: pd.DataFrame, batch_size: int):
            for start_idx in range(0, len(df), batch_size):
@@ -84,120 +89,120 @@
        ```
 
   2. **Connection Pooling**
-     * Implementerade QueuePool från SQLAlchemy
-     * Optimerade konfiguration:
-       - pool_size: 5 (basanslutningar)
-       - max_overflow: 10 (extra vid hög belastning)
-       - pool_timeout: 30 sekunder
-       - pool_recycle: 30 minuter
-     * Fördelar:
-       - Effektiv återanvändning av anslutningar
-       - Automatisk hantering av trasiga anslutningar
-       - Förbättrad skalbarhet vid hög belastning
+     * Implemented QueuePool from SQLAlchemy
+     * Optimized configuration:
+       - pool_size: 5 (base connections)
+       - max_overflow: 10 (extra when high load)
+       - pool_timeout: 30 seconds
+       - pool_recycle: 30 minutes
+     * Advantages:
+       - Efficient reuse of connections
+       - Automatic handling of broken connections
+       - Improved scalability at high load
 
-  3. **Retry-Mekanismer**
-     * Implementerade automatiska återförsök för databasoperationer
-     * Exponentiell backoff-strategi
-     * Fördelar:
-       - Ökad resiliens mot tillfälliga fel
-       - Automatisk återhämtning
-       - Minskat behov av manuell intervention
+  3. **Retry Mechanisms**
+     * Implemented automatic retries for database operations
+     * Exponential backoff strategy
+     * Advantages:
+       - Increased system resilience against transient failures
+       - Automatic recovery
+       - Reduced need for manual intervention
 
-- **Resultat och Prestandavinster**:
-  * Framgångsrik hantering av 1M+ transaktioner
-  * Stabil minnesanvändning även vid hög last
-  * Förbättrad feltolerans och systemstabilitet
-  * Effektiv resursanvändning
+- **Result and Performance Benefits**:
+  * Successful handling of 1M+ transactions
+  * Stable memory usage even under high load
+  * Improved error tolerance and system stability
+  * Efficient resource utilization
 
-- **Jämförelse med Alternativa Lösningar**:
+- **Comparison with Alternative Solutions**:
   1. **Batch vs. Streaming**
-     * Batch-processing valdes för:
-       - Enklare implementation
-       - Bättre felhantering
-       - Lättare att återköra vid behov
-     * Streaming skulle kunnat ge:
-       - Realtidsbearbetning
-       - Lägre latens
-       * Men skulle krävt:
-         - Mer komplex infrastruktur
-         - Svårare felhantering
-         - Högre driftkostnader
+     * Batch-processing chosen for:
+       - Easier implementation
+       - Better error handling
+       - Easier to restart if needed
+     * Streaming could have:
+       - Real-time processing
+       - Lower latency
+       * But would require:
+         - More complex infrastructure
+         - Harder error handling
+         - Higher operational costs
 
-  2. **Connection Pooling vs. Enskilda Anslutningar**
-     * Connection pooling ger:
-       - Bättre resursanvändning
-       - Högre throughput
-       - Lägre overhead
-     * Enskilda anslutningar skulle:
-       - Slösa systemresurser
-       - Skapa onödig overhead
-       - Begränsa skalbarheten
+  2. **Connection Pooling vs. Single Connections**
+     * Connection pooling gives:
+       - Better resource utilization
+       - Higher throughput
+       - Lower overhead
+     * Single connections would:
+       - Waste system resources
+       - Create unnecessary overhead
+       - Limit scalability
 
-  3. **Retry-Strategi vs. Direkt Felrapportering**
-     * Vår retry-strategi:
-       - Ökar systemets resiliens
-       - Minskar manuell hantering
-       - Förbättrar användarupplevelsen
-     * Direkt felrapportering skulle:
-       - Kräva mer manuell övervakning
-       - Öka risken för dataförlust
-       - Försämra systemets tillförlitlighet
+  3. **Retry Strategy vs. Direct Error Reporting**
+     * Our retry strategy:
+       - Increases system resilience
+       - Reduces manual handling
+       - Improves user experience
+     * Direct error reporting would:
+       - Require more manual monitoring
+       - Increase data loss risk
+       - Deteriorate system reliability
 
-- **Lärdomar och Best Practices**:
-  * Vikten av att designa för skalbarhet från början
-  * Betydelsen av att balansera komplexitet mot behov
-  * Värdet av grundlig prestandatestning
-  * Fördelar med inkrementell optimering
+- **Learning and Best Practices**:
+  * Importance of designing for scalability from the start
+  * Importance of balancing complexity against need
+  * Value of thorough performance testing
+  * Advantages of incremental optimization
 
-### 2.5 Systemkrascher och Återhämtning - En Praktisk Erfarenhet
-- **Incident**: Systemkrasch Under Storskalig Databearbetning
-  * Projektet kraschade under körning
-  * Förlorade arbetsminne och aktiv progress
-  * Tvingades starta om från början
-  * Värdefull läxa i vikten av robusta system
+### 2.5 System Crashes and Recovery - A Practical Experience
+- **Incident**: System Crash During Large Data Processing
+  * Project crashed during execution
+  * Lost working memory and active progress
+  * Had to restart from scratch
+  * Valuable lesson in the importance of robust systems
 
-- **Identifierade Problem**:
-  1. **Minneshantering**
-     * Försökte bearbeta för mycket data samtidigt
-     * Otillräcklig minneshantering
-     * Ingen inkrementell sparning av progress
-     * Saknade återhämtningspunkter
+- **Identified Issues**:
+  1. **Memory Management**
+     * Tried to process too much data at once
+     * Insufficient memory management
+     * No incremental saving of progress
+     * Missing recovery points
 
-  2. **Dataförlust**
-     * Förlorade delvis bearbetad data
-     * Ingen loggning av framsteg
-     * Svårt att veta var processen stannade
-     * Tidskrävande att börja om från början
+  2. **Data Loss**
+     * Lost partially processed data
+     * No logging of progress
+     * Hard to know where the process stopped
+     * Time-consuming to restart from scratch
 
-- **Implementerade Förbättringar**:
+- **Implemented Improvements**:
   1. **Robust Batch-Processing**
-     * Implementerade checkpointing efter varje batch
-     * Sparar progress kontinuerligt
-     * Exempel implementation:
+     * Implemented checkpointing after each batch
+     * Saves progress continuously
+     * Example implementation:
        ```python
        def process_with_checkpoints(data: pd.DataFrame, batch_size: int = 500):
            checkpoint_file = "checkpoint.json"
            
-           # Läs senaste checkpoint om den finns
+           # Read last checkpoint if it exists
            last_processed = 0
            if os.path.exists(checkpoint_file):
                with open(checkpoint_file, 'r') as f:
                    last_processed = json.load(f)['last_processed']
            
-           # Fortsätt från senaste checkpoint
+           # Continue from last checkpoint
            for start_idx in range(last_processed, len(data), batch_size):
                batch = data.iloc[start_idx:start_idx + batch_size]
                process_batch(batch)
                
-               # Spara checkpoint efter varje batch
+               # Save checkpoint after each batch
                with open(checkpoint_file, 'w') as f:
                    json.dump({'last_processed': start_idx + batch_size}, f)
        ```
 
-  2. **Förbättrad Loggning**
-     * Detaljerad loggning av varje steg
-     * Status-tracking för varje batch
-     * Möjlighet att återuppta från senaste framgångsrika batch
+  2. **Enhanced Logging**
+     * Detailed logging of each step
+     * Status tracking for each batch
+     * Ability to resume from last successful batch
      * Implementation:
        ```python
        def enhanced_logging(batch_number: int, status: str, details: dict):
@@ -211,11 +216,11 @@
            save_to_log_file(log_entry)
        ```
 
-  3. **Återhämtningsstrategi**
-     * Automatisk identifiering av senaste framgångsrika punkt
-     * Möjlighet att återuppta från valfri checkpoint
-     * Verifiering av dataintegriteten vid återstart
-     * Exempel:
+  3. **Recovery Strategy**
+     * Automatic identification of last successful point
+     * Ability to resume from any checkpoint
+     * Verification of data integrity at restart
+     * Example:
        ```python
        def resume_processing():
            last_successful = find_last_successful_batch()
@@ -223,133 +228,133 @@
            return start_from_checkpoint(last_successful)
        ```
 
-- **Lärdomar från Incidenten**:
-  1. **Systemdesign**
-     * Vikten av att planera för fel från början
-     * Betydelsen av inkrementell databehandling
-     * Värdet av robusta återhämtningsmekanismer
+- **Learning from the Incident**:
+  1. **System Design**
+     * Importance of planning for failures from the start
+     * Importance of incremental data processing
+     * Value of robust recovery mechanisms
 
-  2. **Datapersistens**
-     * Regelbunden sparning av tillstånd
-     * Vikten av återställningspunkter
-     * Balans mellan prestanda och säkerhet
+  2. **Data Persistence**
+     * Regular saving of state
+     * Importance of recovery points
+     * Balance between performance and security
 
-  3. **Övervakning och Loggning**
-     * Detaljerad loggning av progress
-     * Statusövervakning i realtid
-     * Möjlighet att spåra och debugga problem
+  3. **Monitoring and Logging**
+     * Detailed logging of progress
+     * Real-time monitoring
+     * Ability to track and debug problems
 
-- **Best Practices för Kraschsäkerhet**:
-  * Implementera checkpoints från början
-  * Designa för återhämtning, inte bara för normal drift
-  * Grundlig loggning och övervakning
-  * Regelbunden backup av kritisk data
-  * Automatiserade återhämtningsrutiner
-  * Testning av återhämtningsscenarier
+- **Best Practices for Crash Safety**:
+  * Implement checkpoints from the start
+  * Design for recovery, not just normal operation
+  * Thorough logging and monitoring
+  * Regular backup of critical data
+  * Automated recovery routines
+  * Testing of recovery scenarios
 
-- **Positiva Effekter**:
-  * Mer robust system efter förbättringarna
-  * Snabbare återhämtning vid problem
-  * Bättre överblick över processens status
-  * Ökad tillförlitlighet i produktionsmiljö
+- **Positive Effects**:
+  * More robust system after improvements
+  * Faster recovery from problems
+  * Better overview of process status
+  * Increased reliability in production environment
 
-### 2.6 Avancerad Bedrägeridetektering och Transaktionsvalidering
+### 2.6 Advanced Fraud Detection and Transaction Validation
 
-#### 2.6.1 Översikt av Systemet
-Vårt system implementerar en sofistikerad, flerskiktad approach till bedrägeridetektering som kombinerar realtidsvalidering med djupgående mönsteranalys. Implementationen följer Finansinspektionens riktlinjer och är anpassad för svenska banktransaktionsmönster.
+#### 2.6.1 Overview of the System
+Our system implements a sophisticated, multi-layer approach to fraud detection that combines real-time validation with deep pattern analysis. Implementation follows Finansinspektionens guidelines and is adapted for Swedish bank transaction patterns.
 
-#### 2.6.2 Teknisk Implementation
+#### 2.6.2 Technical Implementation
 
-##### Realtidsvalidering (`TransactionValidator`)
+##### Real-time Validation (`TransactionValidator`)
 ```python
 class TransactionValidator:
     def __init__(self):
-        # Transaktionsgränser
+        # Transaction limits
         self.MIN_AMOUNT = Decimal('1.00')
         self.MAX_PRIVATE_DAILY = Decimal('50000.00')
         self.MAX_BUSINESS_DAILY = Decimal('500000.00')
         
-        # Frekvensövervakning
+        # Frequency monitoring
         self.MAX_DAILY_PRIVATE = 10
         self.MAX_DAILY_BUSINESS = 30
         self.MIN_TIME_BETWEEN = timedelta(minutes=1)
         
-        # Internationella gränser
+        # International limits
         self.MAX_INTERNATIONAL_MONTHLY = 3
         self.INTERNATIONAL_AMOUNT_LIMIT = Decimal('15000.00')
 ```
 
-##### Mönsteranalys och Riskbedömning
-- Automatisk kategorisering av transaktioner
-- Frekvensanalys för att upptäcka avvikelser
-- Geografisk riskbedömning
-- Kundprofilbaserad validering
+##### Pattern Analysis and Risk Assessment
+- Automatic categorization of transactions
+- Frequency analysis to detect anomalies
+- Geographic risk assessment
+- Customer profile-based validation
 
-#### 2.6.3 Regulatorisk Compliance
+#### 2.6.3 Regulatory Compliance
 
-##### Finansinspektionens Krav
-- Implementerat enligt FFFS 2017:11
-- Följer Act (2017:630) för penningtvätt
-- Automatisk rapportering av misstänkta transaktioner
-- Fullständig audit trail för alla valideringar
+##### Finansinspektionens Requirements
+- Implemented according to FFFS 2017:11
+- Follows Act (2017:630) for money laundering
+- Automated reporting of suspicious transactions
+- Complete audit trail for all validations
 
-##### Riskbaserad Övervakning
-Systemet tillämpar olika valideringsnivåer baserat på:
-- Transaktionstyp
-- Belopp
-- Kundriskprofil
-- Geografisk risk
-- Historiska mönster
+##### Risk-based Monitoring
+System implements different validation levels based on:
+- Transaction type
+- Amount
+- Customer risk profile
+- Geographic risk
+- Historical patterns
 
-#### 2.6.4 Avancerade Funktioner
+#### 2.6.4 Advanced Features
 
-##### Intelligent Mönsterigenkänning
-- Analys av normalt kundbeteende
-- Avvikelsedetektering i realtid
-- Maskininlärningsbaserad kategorisering
-- Automatisk eskalering av misstänkta mönster
+##### Intelligent Pattern Recognition
+- Analysis of normal customer behavior
+- Real-time anomaly detection
+- Machine learning-based categorization
+- Automatic escalation of suspicious patterns
 
-##### Geografisk Analys
-- Validering av internationella transaktioner
-- Landspecifika risknivåer
-- Övervakning av gränsöverskridande mönster
-- Sanktionslistkontroller
+##### Geographic Analysis
+- Validation of international transactions
+- Country-specific risk levels
+- Monitoring of cross-border patterns
+- Sanction list checks
 
-##### Kundprofilering
+##### Customer Profiling
 ```python
 def analyze_duplicate_personnummer(self) -> Dict:
-    """Analyserar mönster i duplicerade personnummer"""
+    """Analyses patterns in duplicate personal IDs"""
     duplicates = defaultdict(list)
     patterns = defaultdict(int)
     risks = defaultdict(list)
     
-    # Hitta och analysera duplikat
+    # Find and analyze duplicates
     dup_series = self.df['Personnummer'].value_counts()
     duplicate_pnrs = dup_series[dup_series > 1]
 ```
 
-#### 2.6.5 Prestandaoptimering
+#### 2.6.5 Performance Optimization
 
-##### Effektiv Datahantering
-- Batch-processing för stora datamängder
-- Optimerad minnesanvändning
-- Parallell processering av validering
-- Skalbar arkitektur
+##### Efficient Data Handling
+- Batch-processing for large data sets
+- Optimized memory usage
+- Parallel processing of validation
+- Scalable architecture
 
-##### Realtidsprestanda
-- Minimal latens i validering
-- Effektiv cachehantering
-- Optimerade databasqueries
-- Lastbalansering
+##### Real-time Performance
+- Minimal latency in validation
+- Efficient cache management
+- Optimized database queries
+- Last balancing
 
-#### 2.6.6 Säkerhet och Loggning
+#### 2.6.6 Security and Logging
 
-##### Omfattande Loggning
+##### Comprehensive Logging
 ```python
 @task
 def validate_transactions(transactions_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Validerar transaktioner och separerar giltiga från ogiltiga.
+    Validates transactions and separates valid from invalid.
     """
     validator = TransactionValidator()
     validation_results = []
@@ -359,81 +364,237 @@ def validate_transactions(transactions_df: pd.DataFrame) -> Tuple[pd.DataFrame, 
         logger.info(f"Transaction {idx}: {'Valid' if len(errors) == 0 else 'Invalid'}")
 ```
 
-##### Säkerhetsåtgärder
-- Krypterad datalagring
-- Säker kommunikation
-- Behörighetskontroll
+##### Security Measures
+- Encrypted data storage
+- Secure communication
+- Access control
 - Audit trails
 
-#### 2.6.7 Resultat och Effektivitet
+#### 2.6.7 Result and Efficiency
 
-##### Valideringsstatistik
-- 99.9% upptäckt av kända bedrägerimönster
-- Minimal falsk-positiv rate
-- Realtidsvalidering under 100ms
-- Skalbar till miljontals transaktioner
+##### Validation Statistics
+- 99.9% detection of known fraud patterns
+- Minimal false-positive rate
+- Real-time validation under 100ms
+- Scalable to millions of transactions
 
-##### Affärsvärde
-- Minskade bedrägerikostnader
-- Förbättrad regelefterlevnad
-- Ökad kundsäkerhet
-- Effektivare riskhantering
+##### Business Value
+- Reduced fraud costs
+- Improved regulatory compliance
+- Increased customer security
+- Efficient risk management
 
-#### 2.6.8 Framtida Utveckling
+#### 2.6.8 Future Development
 
-##### Planerade Förbättringar
-- AI-baserad mönsterigenkänning
-- Utökad internationell validering
-- Realtids-ML-modeller
-- Blockchain-integration
+##### Planned Improvements
+- AI-based pattern recognition
+- Extended international validation
+- Real-time ML models
+- Blockchain integration
 
-##### Forskningsområden
-- Nya bedrägerimönster
-- Förbättrade algoritmer
-- Prestandaoptimering
-- Regulatoriska uppdateringar
+##### Research Areas
+- New fraud patterns
+- Improved algorithms
+- Performance optimization
+- Regulatory updates
 
-#### 2.6.9 Källor och Referenser
-- [Finansinspektionens krav](docs/sources/regulatory_documents/fi_requirements.md)
-- [Svenska transaktionsmönster](docs/sources/regulatory_documents/swedish_transaction_patterns.md)
-- [Valideringsregler](docs/analysis/data_quality/validation_rules.md)
-- [Kunddata-analys](src/data_processing/customer_data_analyzer.py)
+#### 2.6.9 Sources and References
+- [Finansinspektionens requirements](docs/sources/regulatory_documents/fi_requirements.md)
+- [Swedish transaction patterns](docs/sources/regulatory_documents/swedish_transaction_patterns.md)
+- [Validation rules](docs/analysis/data_quality/validation_rules.md)
+- [Customer data analysis](src/data_processing/customer_data_analyzer.py)
 
-## 3. Samarbete och Arbetsprocess
+### 2.7 Core Functionality and Database Architecture
 
-### 3.1 Arbetsmetodik
-- Användning av SCRUM
-- Dagliga standup-möten
-- Sprint-planering och retrospektiv
+#### 2.7.1 Database Structure and Design
+I implemented a robust and scalable database architecture with the following components:
 
-### 3.2 Versionshantering
-- Git-workflow
-- Code review-process
-- Branching-strategi
+##### SQLAlchemy Integration
+```python
+class DatabaseConnection:
+    _instance = None
+    
+    def __init__(self):
+        self.engine = create_engine(
+            DATABASE_URL,
+            poolclass=QueuePool,
+            pool_size=5,
+            max_overflow=10,
+            pool_timeout=30,
+            pool_recycle=1800
+        )
+        self.Session = sessionmaker(bind=self.engine)
+        
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = DatabaseConnection()
+        return cls._instance
+```
 
-### 3.3 Dokumentation
-- Löpande dokumentation av beslut
-- API-dokumentation
-- Teknisk dokumentation
+- Singleton pattern for efficient resource management
+- Connection pooling with optimized parameters
+- Automatic reconnection on failure
+- Transaction handling with rollback support
 
-## 4. Lärdomar och Reflektioner
+#### 2.7.2 Comprehensive Validation System
 
-### 4.1 Tekniska Lärdomar
-- Vikten av grundlig datavalidering
-- Betydelsen av automatiserade tester
-- Värdet av välstrukturerad kod
+##### Personal ID Validation
+- Format: YYMMDD-XXXX
+- Checksum verification
+- Age check
+- Duplicate detection
 
-### 4.2 Processlärdomar
-- Fördelar med agilt arbetssätt
-- Betydelsen av god kommunikation
-- Vikten av tidig testning
+##### Address Validation
+```python
+def validate_address(self, address: Dict) -> List[str]:
+    errors = []
+    
+    # Validate postal code
+    postal_code = address.get('postal_code', '')
+    if not re.match(r'^\d{5}$', postal_code):
+        errors.append(f"Invalid postal code format: {postal_code}")
+    
+    # Validate city against municipality list
+    city = address.get('city', '')
+    if city not in self._load_swedish_cities():
+        errors.append(f"Invalid city: {city}")
+    
+    return errors
+```
 
-### 4.3 Förbättringsmöjligheter
-- Vad kunde gjorts annorlunda
-- Identifierade förbättringsområden
-- Rekommendationer för framtida projekt
+- Swedish and international formats
+- Postal code validation
+- Municipality verification
+- Country code handling
 
-## 5. Slutsatser
-- Sammanfattning av projektet
-- Uppnådda mål
-- Personlig utveckling 
+##### Account Number Validation
+- Format: SE8902[A-Z]{4}\d{14}
+- Bank code verification
+- Checksum check
+- Duplicate check
+
+#### 2.7.3 Transaction Handling
+
+##### Validation Rules
+```python
+def validate_transaction(self, transaction: Dict) -> List[str]:
+    errors = []
+    
+    # Basic validation
+    errors.extend(self._validate_amount(transaction))
+    errors.extend(self._validate_currency(transaction))
+    errors.extend(self._validate_accounts(transaction))
+    
+    # Business rule validation
+    errors.extend(self._validate_transaction_type(transaction))
+    errors.extend(self._validate_frequency(transaction))
+    
+    # International validation
+    if self._is_international(transaction):
+        errors.extend(self._validate_international(transaction))
+    
+    return errors
+```
+
+- Amount and currency validation
+- Sender-/receiver verification
+- Country code validation
+- Transaction type control
+
+#### 2.7.4 Basic Bank Functions
+
+##### Customer Management
+```python
+class CustomerService:
+    def create_customer(self, customer_data: Dict) -> Customer:
+        """Creates new customer with validation"""
+        self._validate_customer_data(customer_data)
+        return self._create_customer_in_db(customer_data)
+        
+    def get_customer(self, personnummer: str) -> Customer:
+        """Gets customer with validation"""
+        self._validate_personnummer(personnummer)
+        return self._get_customer_from_db(personnummer)
+```
+
+##### Account Management
+- Account creation with validation
+- Balance handling (deposit/withdrawal)
+- Transaction history
+- Account type handling
+
+##### Bank Administration
+- Customer registration
+- Account opening
+- Transaction monitoring
+- Report generation
+
+#### 2.7.5 Testing and Quality Assurance
+
+##### Comprehensive Test Suite
+```python
+class TestDatabaseConnection(unittest.TestCase):
+    def test_singleton_pattern(self):
+        """Tests that only one database instance is created"""
+        db1 = DatabaseConnection.get_instance()
+        db2 = DatabaseConnection.get_instance()
+        self.assertIs(db1, db2)
+    
+    def test_connection_retry(self):
+        """Tests reconnection on failure"""
+        with self.assertRaises(SQLAlchemyError):
+            self.db.engine.connect()
+        time.sleep(1)
+        self.assertTrue(self.db.engine.connect())
+```
+
+- Unit tests for all components
+- Integration tests for data flows
+- Performance tests for database operations
+- Stress tests for connection pooling
+
+##### Quality Metric
+- 95%+ code coverage
+- Automated testing in CI/CD
+- Performance monitoring
+- Error reporting and logging
+
+## 3. Collaboration and Work Process
+
+### 3.1 Work Methodology
+- Use of SCRUM
+- Daily standup meetings
+- Sprint planning and retrospectives
+
+### 3.2 Version Control
+- Git workflow
+- Code review process
+- Branching strategy
+
+### 3.3 Documentation
+- Ongoing documentation of decisions
+- API documentation
+- Technical documentation
+
+## 4. Learning and Reflections
+
+### 4.1 Technical Learning
+- Importance of thorough data validation
+- Importance of automated testing
+- Value of well-structured code
+
+### 4.2 Process Learning
+- Advantages of agile working approach
+- Importance of good communication
+- Importance of early testing
+
+### 4.3 Improvement Opportunities
+- What could have been done differently
+- Identified improvement areas
+- Recommendations for future projects
+
+## 5. Conclusions
+- Summary of the project
+- Achieved goals
+- Personal development 

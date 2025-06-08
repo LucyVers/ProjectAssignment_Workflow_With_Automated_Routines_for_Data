@@ -13,7 +13,7 @@ This document tracks my systematic approach to analyzing data quality in the ban
 
 ## Analysis Process
 
-### Step 1: Initial Data Overview (2024-05-29)
+### Step 1: Initial Data Overview (2025-05-29)
 
 #### 1.1 Customer Data Analysis
 - Total rows in customer file: 1,001 (including header)
@@ -26,6 +26,10 @@ This document tracks my systematic approach to analyzing data quality in the ban
   - Personnummer
   - Bank Account number (IBAN format)
 
+For detailed findings, see:
+- [Customer Data Analysis](customer_data_analysis.md)
+- [Duplicate IDs Analysis](duplicate_ids_analysis.md)
+
 #### 1.2 Transaction Data Analysis
 - Total transactions: 100,001 (including header)
 - Geographic distribution:
@@ -37,13 +41,20 @@ This document tracks my systematic approach to analyzing data quality in the ban
     - Finland: 870
   - International: Various countries worldwide
 
+For detailed transaction analysis, see:
+- [Transaction Validation Rules](validation_rules.md)
+- [Missing Country Analysis](missing_country_analysis.md)
+
 #### 1.3 Initial Data Quality Issues Identified
 1. Missing Data:
    - 500 transactions with empty country fields
+   - See [Missing Country Analysis](missing_country_analysis.md) for resolution
 2. Data Consistency Issues:
    - Inconsistent country name formatting (e.g., "United States of America" vs "USA")
+   - See [Data Relationships Analysis](data_relationships.md) for standardization
 3. Distribution Anomalies:
    - Some countries have very few transactions (requires further investigation)
+   - Detailed in [Transaction Validation Rules](validation_rules.md)
 
 ### Next Steps
 Proposed areas for deeper analysis:
@@ -52,14 +63,17 @@ Proposed areas for deeper analysis:
    - Analyze distribution of transaction amounts
    - Identify potential outliers
    - Look for suspicious patterns
+   - See [Transaction Validation Rules](validation_rules.md)
 
 2. Missing Data Investigation:
    - Detailed analysis of the 500 transactions with missing country data
    - Determine if there are patterns in these missing values
+   - Resolution documented in [Missing Country Analysis](missing_country_analysis.md)
 
 3. Transaction Types:
    - Analyze distribution of incoming vs outgoing transactions
    - Look for patterns in transaction types by country
+   - See [Transaction Validation Rules](validation_rules.md)
 
 ## Methodology
 My analysis follows these principles:
