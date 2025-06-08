@@ -4,6 +4,12 @@
 ## Project Overview
 This is my individual extension and enhancement of the [python-bank-project-start](https://github.com/WeeHorse/python-bank-project-start). I have developed a sophisticated data quality management system focusing on transaction validation, fraud detection, and automated data processing workflows.
 
+## Quick Links
+- 📘 [User Manual](docs/USER_MANUAL.md) - Complete guide for using the system
+- 🔍 [Data Quality Analysis](docs/analysis/data_quality/initial_analysis.md)
+- 📊 [Database Documentation](docs/development/database_architecture.md)
+- 📝 [License Information](LICENSE.md)
+
 ## Data Sources
 The project works with the following data files:
 
@@ -169,7 +175,7 @@ alembic upgrade head
 ```
 
 ## Usage
-Detailed usage instructions and examples can be found in the [User Manual](docs/implementation/user_manual.md).
+For detailed instructions on how to use the system, please refer to our comprehensive [User Manual](docs/USER_MANUAL.md).
 
 ## Testing
 The project includes comprehensive test coverage:
