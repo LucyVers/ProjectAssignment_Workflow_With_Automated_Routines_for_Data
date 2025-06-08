@@ -31,6 +31,12 @@ The extensions and modifications made in this project are subject to the license
    - Any reference to this work must be properly cited
    - Usage in academic contexts must comply with relevant institutional policies
 
+5. **Database and Test Data**:
+   - The database schema structure is part of this project's implementation
+   - The test data included in the database dump was provided by the original project maintainers at https://github.com/WeeHorse/python-bank-project-start
+   - The database dump is provided solely for project evaluation and testing purposes
+   - Usage of the test data must comply with the original project's terms and conditions
+
 ### Permissions
 
 For permissions and inquiries regarding the use of this project, please contact the copyright holder directly.
@@ -41,4 +47,4 @@ This software is provided "as is", without warranty of any kind, express or impl
 
 ---
 
-Last Updated: May 28, 2025 
+Last Updated: June 8, 2025 
