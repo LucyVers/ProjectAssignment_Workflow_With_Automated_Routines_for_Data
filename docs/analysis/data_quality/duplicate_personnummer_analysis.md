@@ -6,7 +6,7 @@ This document analyzes the 419 cases of duplicate personnummer identified in our
 ## Analysis Methodology
 1. Data Source: sebank_customers_with_accounts.csv
 2. Total Records: 1000 customer records
-3. Identified Issues: 419 duplicate personnummer cases
+3. Identified Issues: 419 duplicate personnummer cases - RESOLVED
 
 ## Analysis Categories
 1. Risk Levels

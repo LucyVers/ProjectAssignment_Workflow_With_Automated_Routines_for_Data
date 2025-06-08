@@ -41,12 +41,12 @@
    - Visa data i databasen
 
 2. Sammanställa presentation
-   - Visa datakvalitetsproblem vi hittade:
-     * 419 duplicate personnummer
-     * 55 underage customers
-     * 998 invalid postal codes
-     * 886 invalid cities
-     * 459 non-standard phone numbers
+   - Visa datakvalitetsproblem vi hittade och löste:
+     * ✅ 419 duplicate personnummer - RESOLVED
+     * ✅ 55 underage customers - Guardian info added
+     * ✅ 998 invalid postal codes - Corrected
+     * ✅ 886 invalid cities - Standardized
+     * ✅ 459 non-standard phone numbers - Standardized
    - Visa hur vi löste problemen
    - Visa prestanda med nuvarande data
 

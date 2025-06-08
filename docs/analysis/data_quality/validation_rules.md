@@ -16,6 +16,13 @@ Key findings requiring rule updates:
 - 886 invalid city names
 - 459 non-standardized phone numbers
 
+**Update (June 7, 2025)**: All previously identified issues have been resolved:
+- ✅ 419 duplicate personnummer detected and resolved
+- ✅ 55 cases of potentially underage customers - guardian info added
+- ✅ 998 invalid postal codes - corrected and standardized
+- ✅ 886 invalid city names - standardized
+- ✅ 459 non-standardized phone numbers - converted to standard format
+
 ## Overview
 This document defines the validation rules for my banking data quality system, based on the analysis of perfect quality patterns observed in 2024 data and current KYC/AML requirements. These rules will be used to validate both customer and transaction data.
 

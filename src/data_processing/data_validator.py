@@ -243,12 +243,12 @@ class DataValidator:
         # Check for duplicates
         if len(unique_accounts) < len(self.df['BankAccount']):
             results['duplicates'] = self.df[self.df['BankAccount'].duplicated()]['BankAccount'].tolist()
-        
+
         # Validate format for each unique account
         for account in unique_accounts:
             if not self._validate_account_format(account):
                 results['invalid_format'].append(account)
-                
+
         self.validation_results['account_numbers'] = results
 
     @staticmethod
